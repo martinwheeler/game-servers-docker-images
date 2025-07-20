@@ -17,15 +17,17 @@ RUN set -x \
   # Install, update & upgrade packages
   && apt-get update \
   && apt-get install -y --no-install-recommends --no-install-suggests \
-  wget=1.21.3-1+b2 \
-  ca-certificates=20230311 \
-  lib32z1=1:1.2.13.dfsg-1 \
-  tini=0.19.0-1 \
-  libc6-dev=2.36-9+deb12u7 \
-  file=1:5.44-3 \
-  libatomic1=12.2.0-14 \
-  libpulse0=16.1+dfsg1-2+b1 \
-  libpulse-dev=16.1+dfsg1-2+b1 \
+  libatomic1 \
+  wget \
+  ca-certificates \
+  lib32z1 \
+  tini \
+  libc6-dev \
+  file \
+  libpulse0 \
+  libpulse-dev
+
+RUN set -x \
   && mkdir -p "${STEAMAPPDIR}" \
   && chmod +x "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" \
   && chown -R "${USER}:${USER}" "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" "${STEAMAPPDIR}" \
