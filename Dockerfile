@@ -1,7 +1,7 @@
 ###########################################################
 # Dockerfile that builds a Valheim Gameserver
 ###########################################################
-FROM cm2network/steamcmd:root as build_stage
+FROM cm2network/steamcmd:root AS build_stage
 
 LABEL maintainer="walentinlamonos@gmail.com"
 
