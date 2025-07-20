@@ -19,5 +19,6 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
+          no-cache: true
           push: true
           tags: martingwheeler/valheim:base,martingwheeler/valheim:latest,martingwheeler/valheim:plus
