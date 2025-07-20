@@ -5,10 +5,10 @@ FROM cm2network/steamcmd:root as build_stage
 
 LABEL maintainer="walentinlamonos@gmail.com"
 
-ENV STEAMAPPID 896660
-ENV STEAMAPP valheim
-ENV STEAMAPPDIR "${HOMEDIR}/${STEAMAPP}-dedicated"
-ENV DLURL https://raw.githubusercontent.com/CM2Walki/Valheim
+ENV STEAMAPPID=896660
+ENV STEAMAPP=valheim
+ENV STEAMAPPDIR="${HOMEDIR}/${STEAMAPP}-dedicated"
+ENV DLURL=https://raw.githubusercontent.com/CM2Walki/Valheim
 
 COPY "etc/entry.sh" "${HOMEDIR}/entry.sh"
 COPY "etc/tinientry.sh" "${HOMEDIR}/tinientry.sh"
@@ -66,4 +66,4 @@ EXPOSE 2456/tcp \
 
 FROM bookworm-base AS bookworm-plus
 
-ENV VALHEIM_PLUS_VERSION 0.9.16.2
+ENV VALHEIM_PLUS_VERSION=0.9.16.2
