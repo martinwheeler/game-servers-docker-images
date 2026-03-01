@@ -1,78 +1,90 @@
-# What is Valheim?
-A brutal exploration and survival game for 1-10 players, set in a procedurally-generated purgatory inspired by Viking culture. Battle, build, and conquer your way to a saga worthy of Odin’s patronage!
+# Terraria Dedicated Server Docker Image
 
->  [Valheim](https://store.steampowered.com/app/892970/Valheim/)
+This repository builds a Docker image that runs the **Terraria** dedicated server. The container
+downloads the official server zip, extracts the Linux binaries, and provides convenient environment
+variables and a generated `serverconfig.txt` so you can use the same configuration mechanisms as
+the Windows instructions.
 
-<img src="https://static.wikia.nocookie.net/valheim/images/4/4c/Logo_valheim.png" alt="logo" width="300"/></img>
+## Quick start
 
-# How to use this image
+Build the image:
 
-This image is a fork of [CM2Walki/Valheim](https://github.com/CM2Walki/Valheim) to add support for the [V+ Reforged](https://github.com/Grantapher/ValheimPlus) mod. The previous [Valheim Plus](https://github.com/valheimPlus/ValheimPlus) mod is no longer maintained.
-
-## Hosting a simple game server
-
-Running on the *host* interface (recommended):<br/>
-```console
-$ docker run -d --net=host --name=valheim-dedicated martingwheeler/valheim
+```sh
+./build
+# or
+docker build --no-cache -t martingwheeler/terraria:latest .
 ```
 
-Running using a bind mount for data persistence on container recreation:
-```console
-$ mkdir -p $(pwd)/valheim-data
-$ chmod 777 $(pwd)/valheim-data # Makes sure the directory is writeable by the unprivileged container user
-$ docker run -d --net=host -v $(pwd)/valheim-data:/home/steam/valheim-dedicated/ --name=valheim-dedicated martingwheeler/valheim
+Create a persistent world directory and give it wide permissions:
+
+```sh
+mkdir -p ~/terraria-worlds
+chmod 777 ~/terraria-worlds
+```
+
+Run the server using a host bind mount (recommended); map the host
+folder to `/home/steam/terraria`, which is where the server writes its
+world files and metadata:
+
+```sh
+docker run -d --name terraria-server \
+  -p 7777:7777/tcp -p 7777:7777/udp \
+  -v ~/terraria-worlds:/home/steam/terraria \
+  -e TERRARIA_AUTOCREATE=2 \
+  martingwheeler/terraria:latest
+```
+
+The container will automatically download/update the Terraria server on startup.
+
+### Attached/interactive mode
+
+To type commands during startup or respond to prompts run with `-it --rm` instead of `-d` and omit
+`-e TERRARIA_AUTOCREATE` if you want to choose options manually.
+
+## Configuration via environment variables
+
+The entry script creates a `serverconfig.txt` based on the following environment variables
+(provided as `-e VAR=value` to `docker run`). Any variable left unset is omitted from the file,
+and the server will prompt if it still needs input.
+
+```sh
+TERRARIA_WORLD        # path or name of existing world file (.wld), e.g. MyWorld.wld
+TERRARIA_PORT         # default 7777
+TERRARIA_MAXPLAYERS   # maximum players
+TERRARIA_PASSWORD     # server password (empty for none)
+TERRARIA_WORLDNAME    # displayed name for the world
+TERRARIA_AUTOCREATE   # 1=small,2=medium,3=large (creates world if missing)
+TERRARIA_NOGUI        # any value will add the -nogui flag
+ADDITIONAL_ARGS       # extra CLI flags appended after -config
+```
+
+Example with explicit port and password:
+
+```sh
+docker run --rm -it \
+  -v ~/terraria-worlds:/home/steam/terraria \
+  -e TERRARIA_PORT=7778 \
+  -e TERRARIA_PASSWORD=secret \
+  martingwheeler/terraria:latest
+```
+
+### Why use a config file?
+
+The official server accepts `-config serverconfig.txt`; writing the file via env vars lets you
+change settings without editing the container image or typing responses interactively. The
+`entry.sh` script prints where it generated the file and always passes `-config` when running.
+
+## Persisting data
+
+Mount a host directory or Docker volume at `/home/steam/terraria`. The server runs from that
+folder and writes worlds, metadata, and `favorites.json` there—make sure the `steam` user (UID 1000) has write permission. A host bind (`chmod 777`) avoids issues seen with named volumes.
+
+## Advanced use
+
+You can still bypass the entry script by running a shell
+`docker run --rm -it --entrypoint /bin/bash martingwheeler/terraria:latest` and starting
+`./TerrariaServer.bin.x86_64` yourself. Use this for debugging or custom startup logic.
+
 ---
-$ docker volume create valheim-plus-data # For valheim:plus - Create an additional world volume
-$ docker run -d --net=host -v $(pwd)/valheim-data:/home/steam/valheim-dedicated/ -v valheim-plus-data:/home/steam/.config/unity3d/IronGate/Valheim/ --name=valheim-plus-dedicated martingwheeler/valheim:plus
-```
 
-Running multiple instances (increment SERVER_PORT by two, there is no way to overwrite the steam query port, it will always be SERVER_PORT + 1!):
-```console
-$ docker run -d --net=host -e SERVER_PORT=2458 --name=valheim-dedicated2 martingwheeler/valheim
-```
-
-**It's also recommended to use "--cpuset-cpus=" to limit the game server to a specific core & thread.**<br/>
-**The container will automatically update the game on startup, so if there is a game update just restart the container.**
-
-# Configuration
-## Environment Variables
-Feel free to overwrite these environment variables, using -e (--env): 
-```dockerfile
-SERVER_PORT=2456 (Game Port (tcp & udp); Steam Query Port (udp) will be SERVER_PORT + 1)
-SERVER_PUBLIC=1
-SERVER_WORLD_NAME="BraveNewWorld"
-SERVER_PW="changeme"
-SERVER_NAME="New \"${STEAMAPP}\" Server"
-SERVER_LOG_PATH="logs_output/outputlog_server.txt"
-SERVER_SAVE_DIR="Worlds"
-SCREEN_QUALITY="Fastest"
-SCREEN_WIDTH=640
-SCREEN_HEIGHT=480
-STEAMCMD_UPDATE_ARGS="" (Gets appended here: +app_update [appid] [STEAMCMD_UPDATE_ARGS]; Example: "validate")
-ADDITIONAL_ARGS="" (Pass additional arguments to the server. Make sure to escape correctly!)
-```
-
-If you want to learn more about configuring a Valheim server check this [documentation](https://valheim.fandom.com/wiki/Hosting_Servers).
-
-## Config
-You can find the `adminlist.txt`, `bannedlist.txt` and `permittedlist.txt`:
-- `/home/steam/valheim-dedicated/Worlds` for tag `valheim:latest`
-- `/home/steam/.config/unity3d/IronGate/Valheim/Worlds` for tag `valheim:plus`
-
-The world database files can be found in:
-- `/home/steam/valheim-dedicated/Worlds/worlds` for tag `valheim:latest`
-- `/home/steam/.config/unity3d/IronGate/Valheim/` for tag `valheim:plus`
-
-# Image Variants:
-The `valheim` images come in two flavors, each designed for a specific use case.
-
-## `valheim:latest`
-This is the defacto image. If you are unsure about what your needs are, you probably want to use this one. It is a bare-minimum Valheim dedicated server containing no 3rd party plugins.<br/>
-
-## `valheim:plus`
-This is a specialized image. It contains the popular mod [V+ Reforged](https://github.com/Grantapher/ValheimPlus). 
-
-Note: The game world is saved in a different directory in this tag, make sure to create an additional volume for world persistency across container recreations. See [#Hosting a simple game server](#hosting-a-simple-game-server) above.
-
-# Contributors
-[![Contributors Display](https://badges.pufler.dev/contributors/martinwheeler/valheim?size=50&padding=5&bots=false)](https://github.com/martinwheeler/valheim/graphs/contributors)
+_This README replaces the original Valheim documentation – the repo now focuses solely on Terraria._

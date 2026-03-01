@@ -1,38 +1,34 @@
 # Purpose
 
-This repository builds and publishes a Docker image for a Valheim dedicated server (two variants: `:latest` / `:base` and `:plus`). The guidance below captures the minimal, project-specific knowledge an AI coding agent needs to be productive: architecture, build/publish flows, runtime configuration, and notable file locations.
+This repository builds and publishes a Docker image for a **Terraria** dedicated server. The guidance below captures the minimal, project-specific knowledge an AI coding agent needs to be productive: architecture, build/publish flows, runtime configuration, and notable file locations.
 
 ## Big picture
 
-- This repo produces a Docker image based on `cm2network/steamcmd:root` that installs Valheim via SteamCMD and optionally deploys the ValheimPlus mod (bookworm-plus target).
+- This repo produces a Docker image based on `cm2network/steamcmd:root` (for compatibility with the steam user and base tooling) but the server files are downloaded from the official Terraria website rather than SteamCMD.
 - Entrypoint behavior is implemented in `etc/entry.sh` and `etc/tinientry.sh` (the container runs `tini` and then `tinientry.sh`, which invokes `entry.sh`).
-- Two image targets in the `Dockerfile`: `bookworm-base` (default server) and `bookworm-plus` (includes V+ Reforged). Use build targets to produce the correct tag.
+- The `Dockerfile` no longer has multiple build targets; it simply installs required utilities, copies the entry scripts, and exposes port 7777.
 
 ## Key files
 
-- `Dockerfile` — primary build logic. Copies `etc/entry.sh` and `etc/tinientry.sh`, defines ENV defaults and `ENTRYPOINT`.
-- `etc/entry.sh` — updates Valheim via SteamCMD and launches the server. Contains the runtime command templates for both base and plus variants.
-- `etc/tinientry.sh` — injects `ADDITIONAL_ARGS` into `entry.sh` and calls it.
-- `build` — convenience script: builds both `bookworm-base` and `bookworm-plus` targets.
-- `push` — convenience script: pushes all tags using `${DOCKER_REPO}`.
-- `README.md` — contains user-facing runtime examples and notes (mounts, port behavior, persistency).
+- `Dockerfile` — primary build logic. Copies `etc/entry.sh` and `etc/tinientry.sh`, defines Terraria-related ENV defaults and `ENTRYPOINT`.
+- `etc/entry.sh` — downloads the Terraria server zip, extracts the Linux binaries, optionally creates `serverconfig.txt` from environment variables, and launches the server.
+- `etc/tinientry.sh` — simple wrapper that runs `entry.sh` under `tini`.
+- `build` — convenience script: builds the Terraria image with `--no-cache`.
+- `README.md` — contains user-facing runtime examples and notes (mounts, env vars, config file, persistency).
 
 ## Build / publish flows (concrete)
 
 - Build locally (examples in `build`):
-  - `./build` (runs two `docker build` commands)
-  - Equivalent manual commands:
-    - `docker build --target=bookworm-base -t martingwheeler/valheim:latest -t martingwheeler/valheim:base --no-cache .`
-    - `docker build --target=bookworm-plus -t martingwheeler/valheim:plus --no-cache .`
-- Push:
-  - `DOCKER_REPO=martingwheeler/valheim ./push` or run `./push` after exporting `DOCKER_REPO`.
+  - `./build` (runs a single `docker build --no-cache` command) to create `martingwheeler/terraria:latest`.
+- Push: use your preferred `docker push` command; a simple `docker push martingwheeler/terraria:latest` suffices.
+  (there is no `push` script any longer).
 
 ## Runtime configuration (essential details)
 
-- Configured via environment variables in the `Dockerfile` and documented in `README.md` (e.g. `SERVER_PORT`, `SERVER_NAME`, `SERVER_PW`, `SERVER_WORLD_NAME`).
-- Important port behavior: Steam query port = `SERVER_PORT + 1`. When running multiple instances, increment `SERVER_PORT` by two to avoid conflicts.
-- Persist world files using host bind or Docker volumes. Note: `:plus` saves worlds in a different path — see `README.md` for exact locations.
-- Container updates the game on startup (SteamCMD); restarting the container pulls updates.
+- Configured via environment variables in the `Dockerfile` and documented in `README.md` (see `TERRARIA_*` variables and `ADDITIONAL_ARGS`).
+- The entry script generates a `serverconfig.txt` from environment variables and passes `-config` to the server binary.
+- Persist world files using a host bind or properly owned Docker volume mounted at `/home/steam/.local/share/Terraria`.
+- The container downloads/updates the Terraria server zip on each start; restarting pulls any new release.
 
 ## Patterns & conventions for agents
 
@@ -48,12 +44,28 @@ This repository builds and publishes a Docker image for a Valheim dedicated serv
 
 ## Integration points / external dependencies
 
-- SteamCMD (via `cm2network/steamcmd:root`). The repo relies on online Steam updates and the V+ Reforged release tarballs when `VALHEIM_PLUS_VERSION` is set.
-- ValheimPlus releases are downloaded directly in `etc/entry.sh` when `VALHEIM_PLUS_VERSION` is present.
+- Terraria server binaries are fetched directly from `https://terraria.org/api/download/pc-dedicated-server/terraria-server-${TERRARIA_VERSION}.zip` (version controlled via `TERRARIA_VERSION`).
+
+## Windows / Git-Bash considerations
+
+When running any Docker commands on Windows using Git-Bash or MSYS, **always prefix with `MSYS_NO_PATHCONV=1`** to prevent path mangling. Git-Bash incorrectly translates forward slashes and colons (e.g., volume mount separators) to Windows paths, resulting in malformed mount points.
+
+Example:
+
+```bash
+# Correct on Windows with Git-Bash:
+MSYS_NO_PATHCONV=1 docker run -v ~/terraria-worlds:/home/steam/terraria …
+
+# Also correct: use absolute Windows paths (no translation needed)
+docker run -v C:/Users/marti/terraria-worlds:/home/steam/terraria …
+```
+
+Without this prefix you'll see odd folder names like `terraria-worlds;C` or errors about paths not existing.
 
 ## What I preserved from the repository
 
-- The README's concrete Docker usage examples and the precise save-directory differences between `:latest` and `:plus` images are the canonical source of runtime behavior — keep them authoritative.
+- The README's concrete Docker usage examples and mount paths are the canonical source of runtime behavior — keep them authoritative.
+- Record any new deployment patterns or CLI conventions here so future work stays consistent.
 
 ## If anything is missing or unclear
 

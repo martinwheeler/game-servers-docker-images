@@ -1,55 +1,36 @@
 ###########################################################
-# Dockerfile that builds a Valheim Gameserver
+# Dockerfile that builds a Terraria dedicated server image
 ###########################################################
-FROM cm2network/steamcmd:root AS build_stage
+FROM cm2network/steamcmd:root
 
-LABEL maintainer="walentinlamonos@gmail.com"
+LABEL maintainer="hello@martinwheeler.com.au"
 
-ENV STEAMAPPID=896660
-ENV STEAMAPP=valheim
-ENV STEAMAPPDIR="${HOMEDIR}/${STEAMAPP}-dedicated"
-ENV DLURL=https://raw.githubusercontent.com/CM2Walki/Valheim
+# Terraria-only image: downloads the official dedicated-server zip, extracts
+# the Linux binaries and runs the 64-bit server binary.
+ENV TERRARIA_VERSION=1455 \
+  TERRARIA_URL="https://terraria.org/api/download/pc-dedicated-server/terraria-server-1455.zip" \
+  # configuration vars (empty = prompt unless ADDITIONAL_ARGS overrides)
+  TERRARIA_WORLD="Default" \
+  TERRARIA_PORT="7777" \
+  TERRARIA_MAXPLAYERS="16" \
+  TERRARIA_PASSWORD="12356" \
+  TERRARIA_WORLDNAME="" \
+  TERRARIA_AUTOCREATE="2" \
+  # set to any non-empty value to add -nogui flag on the command line
+  TERRARIA_NOGUI="1" \
+  ADDITIONAL_ARGS=""
 
 COPY "etc/entry.sh" "${HOMEDIR}/entry.sh"
 COPY "etc/tinientry.sh" "${HOMEDIR}/tinientry.sh"
 
 RUN set -x \
-  # Install, update & upgrade packages
   && apt-get update \
-  && apt-get install -y --no-install-recommends --no-install-suggests \
-  libatomic1 \
-  wget \
-  ca-certificates \
-  lib32z1 \
-  tini \
-  libc6-dev \
-  file \
-  libpulse0 \
-  libpulse-dev
-
-RUN set -x \
-  && mkdir -p "${STEAMAPPDIR}" \
+  && apt-get install -y --no-install-recommends wget unzip ca-certificates tini \
   && chmod +x "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" \
-  && chown -R "${USER}:${USER}" "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" "${STEAMAPPDIR}" \
-  # Clean up
+  && chown -R "${USER}:${USER}" "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" \
   && rm -rf /var/lib/apt/lists/*
 
-FROM build_stage AS bookworm-base
-
-ENV SERVER_PORT=2456 \
-  SERVER_PUBLIC=1 \
-  SERVER_WORLD_NAME="BraveNewWorld" \
-  SERVER_PW="changeme" \
-  SERVER_NAME="New \"${STEAMAPP}\" Server" \
-  SERVER_LOG_PATH="logs_output/outputlog_server.txt" \
-  SERVER_SAVE_DIR="Worlds" \
-  SCREEN_QUALITY="Fastest" \
-  SCREEN_WIDTH=640 \
-  SCREEN_HEIGHT=480 \
-  ADDITIONAL_ARGS="" \
-  STEAMCMD_UPDATE_ARGS=""
-
-# Switch to user
+# Switch to unprivileged steam user provided by base image
 USER ${USER}
 
 WORKDIR ${HOMEDIR}
@@ -59,11 +40,6 @@ STOPSIGNAL SIGINT
 
 ENTRYPOINT ["tini", "-g", "--", "/home/steam/tinientry.sh"]
 
-# Expose ports
-EXPOSE 2456/tcp \
-  2456/udp \
-  2467/udp
-
-FROM bookworm-base AS bookworm-plus
-
-ENV VALHEIM_PLUS_VERSION=0.9.17.1
+# Expose Terraria default ports
+EXPOSE 7777/tcp \
+  7777/udp
