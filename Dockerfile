@@ -1,23 +1,35 @@
 ###########################################################
-# Dockerfile that builds a Terraria dedicated server image
+# Dockerfile that builds a Factorio dedicated server image
 ###########################################################
 FROM cm2network/steamcmd:root
 
 LABEL maintainer="hello@martinwheeler.com.au"
 
-# Terraria-only image: downloads the official dedicated-server zip, extracts
+# Factorio-only image: downloads the official headless server, extracts
 # the Linux binaries and runs the 64-bit server binary.
-ENV TERRARIA_VERSION=1455 \
-  TERRARIA_URL="https://terraria.org/api/download/pc-dedicated-server/terraria-server-1455.zip" \
-  # configuration vars (empty = prompt unless ADDITIONAL_ARGS overrides)
-  TERRARIA_WORLD="Default" \
-  TERRARIA_PORT="7777" \
-  TERRARIA_MAXPLAYERS="16" \
-  TERRARIA_PASSWORD="12356" \
-  TERRARIA_WORLDNAME="" \
-  TERRARIA_AUTOCREATE="2" \
-  # set to any non-empty value to add -nogui flag on the command line
-  TERRARIA_NOGUI="1" \
+ENV FACTORIO_VERSION=2.0.73 \
+  FACTORIO_URL="https://www.factorio.com/get-download/2.0.73/headless/linux64" \
+  # server configuration (stored in server-settings.json)
+  FACTORIO_SERVER_NAME="Factorio Server" \
+  FACTORIO_SERVER_DESCRIPTION="Headless Factorio server" \
+  FACTORIO_GAME_PASSWORD="" \
+  FACTORIO_RCON_PASSWORD="" \
+  FACTORIO_RCON_PORT="27015" \
+  FACTORIO_MAX_PLAYERS="0" \
+  FACTORIO_AUTOSAVE_INTERVAL="10" \
+  FACTORIO_AUTOSAVE_SLOTS="5" \
+  FACTORIO_PAUSE_WHEN_EMPTY="true" \
+  # file paths for optional configuration/logging
+  FACTORIO_CONSOLE_LOG="" \
+  FACTORIO_SERVER_WHITELIST="" \
+  FACTORIO_SERVER_BANLIST="" \
+  FACTORIO_SERVER_ADMINLIST="" \
+  # save file configuration
+  FACTORIO_PORT="34197" \
+  FACTORIO_SAVE_NAME="factorio-server" \
+  FACTORIO_CREATE_SAVE="true" \
+  FACTORIO_REGENERATE_SETTINGS="false" \
+  # additional server options (command-line args)
   ADDITIONAL_ARGS=""
 
 COPY "etc/entry.sh" "${HOMEDIR}/entry.sh"
@@ -25,7 +37,7 @@ COPY "etc/tinientry.sh" "${HOMEDIR}/tinientry.sh"
 
 RUN set -x \
   && apt-get update \
-  && apt-get install -y --no-install-recommends wget unzip ca-certificates tini \
+  && apt-get install -y --no-install-recommends wget xz-utils ca-certificates tini \
   && chmod +x "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" \
   && chown -R "${USER}:${USER}" "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" \
   && rm -rf /var/lib/apt/lists/*
@@ -40,6 +52,6 @@ STOPSIGNAL SIGINT
 
 ENTRYPOINT ["tini", "-g", "--", "/home/steam/tinientry.sh"]
 
-# Expose Terraria default ports
-EXPOSE 7777/tcp \
-  7777/udp
+# Expose Factorio default ports
+EXPOSE 34197/tcp \
+  34197/udp

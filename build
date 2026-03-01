@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build --no-cache -t martingwheeler/terraria:latest .
+docker build --no-cache -t martingwheeler/factorio:latest .

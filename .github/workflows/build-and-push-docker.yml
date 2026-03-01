@@ -21,4 +21,4 @@ jobs:
         with:
           no-cache: true
           push: true
-          tags: martingwheeler/terraria:latest
+          tags: martingwheeler/factorio:latest
