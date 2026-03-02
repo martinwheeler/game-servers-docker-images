@@ -43,6 +43,7 @@ cd "${HOMEDIR}/factorio"
 # Ensure data directory structure exists
 mkdir -p data
 mkdir -p saves
+mkdir -p mods
 
 # Generate server-settings.json from environment variables
 # This allows users to configure the server without modifying the JSON directly
@@ -131,6 +132,34 @@ $([ -n "$adminlist_line" ] && echo "$adminlist_line")
 EOF
 }
 
+# Generate mod-list.json to control which mods are enabled
+generate_mod_list() {
+  local mod_list_file="$1"
+  
+  cat > "$mod_list_file" <<-EOF
+{
+  "mods": [
+    {
+      "name": "base",
+      "enabled": true
+    },
+    {
+      "name": "elevated-rails",
+      "enabled": false
+    },
+    {
+      "name": "quality",
+      "enabled": false
+    },
+    {
+      "name": "space-age",
+      "enabled": false
+    }
+  ]
+}
+EOF
+}
+
 # Create server-settings.json if it doesn't exist, or regenerate if FACTORIO_REGENERATE_SETTINGS is set
 if [ ! -f "server-settings.json" ] || [ "$FACTORIO_REGENERATE_SETTINGS" = "true" ]; then
   echo "Generating server-settings.json..."
@@ -138,6 +167,10 @@ if [ ! -f "server-settings.json" ] || [ "$FACTORIO_REGENERATE_SETTINGS" = "true"
 else
   echo "Using existing server-settings.json"
 fi
+
+# Generate mod-list.json to enable/disable expansion mods
+echo "Generating mods/mod-list.json..."
+generate_mod_list "mods/mod-list.json"
 
 # Check if a save file exists
 SAVE_FILE="saves/${FACTORIO_SAVE_NAME}.zip"
