@@ -21,10 +21,11 @@ mkdir -p ~/factorio
 chmod 777 ~/factorio
 ```
 
-Run the server using a host bind mount (recommended); map the host folder to 
+Run the server using a host bind mount (recommended); map the host folder to
 `/home/steam/factorio`, which is where the server stores saves and configuration:
 
 **On Linux/macOS:**
+
 ```sh
 docker run -d --name factorio-server \
   -p 34197:34197/tcp -p 34197:34197/udp \
@@ -33,6 +34,7 @@ docker run -d --name factorio-server \
 ```
 
 **On Windows with Git Bash:**
+
 ```bash
 MSYS_NO_PATHCONV=1 docker run -d --name factorio-server \
   -p 34197:34197/tcp -p 34197:34197/udp \
@@ -41,12 +43,14 @@ MSYS_NO_PATHCONV=1 docker run -d --name factorio-server \
 ```
 
 The container will automatically:
+
 - Download the Factorio headless server (2.0.73 by default)
 - Generate a `server-settings.json` file from environment variables
 - Create an initial save file called `factorio-server.zip`
 - Start the server in headless mode
 
 Check logs with:
+
 ```sh
 docker logs -f factorio-server
 ```
@@ -56,6 +60,7 @@ docker logs -f factorio-server
 The entry script creates `server-settings.json` based on environment variables (provided as `-e VAR=value` to `docker run`).
 
 ### Server identity & gameplay
+
 ```sh
 FACTORIO_SERVER_NAME          # Server name (default: "Factorio Server")
 FACTORIO_SERVER_DESCRIPTION   # Description (default: "Headless Factorio server")
@@ -65,6 +70,7 @@ FACTORIO_PAUSE_WHEN_EMPTY     # Pause game when no players connected (default: t
 ```
 
 ### Autosave & persistence
+
 ```sh
 FACTORIO_AUTOSAVE_INTERVAL    # Autosave interval in minutes (default: 10)
 FACTORIO_AUTOSAVE_SLOTS       # Number of autosave slots to keep (default: 5)
@@ -73,12 +79,14 @@ FACTORIO_CREATE_SAVE          # Auto-create save if missing (default: true)
 ```
 
 ### RCON (Remote Console)
+
 ```sh
 FACTORIO_RCON_PASSWORD        # Password for RCON access (default: empty/disabled)
 FACTORIO_RCON_PORT            # RCON port number (default: 27015)
 ```
 
 ### Optional logging & lists
+
 ```sh
 FACTORIO_CONSOLE_LOG          # Path to console log file (default: empty)
 FACTORIO_SERVER_WHITELIST     # Path to whitelist file (default: empty)
@@ -87,6 +95,7 @@ FACTORIO_SERVER_ADMINLIST     # Path to adminlist file (default: empty)
 ```
 
 ### Advanced
+
 ```sh
 FACTORIO_VERSION              # Server version to download (default: 2.0.73)
 FACTORIO_URL                  # Custom download URL (default: official headless)
@@ -144,11 +153,13 @@ docker run --rm -it \
 ## Persisting data
 
 Mount a host directory or Docker volume at `/home/steam/factorio`. The server reads/writes:
+
 - **Saves:** `~/factorio/saves/` — all `.zip` save files
 - **Config:** `~/factorio/server-settings.json` — generated on first start
 - **Logs:** `~/factorio/console_log.txt` (if `FACTORIO_CONSOLE_LOG` is set)
 
 Make sure the `steam` user (UID 1000) has write permission:
+
 ```sh
 chmod 777 ~/factorio
 ```
@@ -156,11 +167,13 @@ chmod 777 ~/factorio
 ## Advanced use
 
 ### Run a shell for manual inspection:
+
 ```sh
 docker run --rm -it --entrypoint /bin/bash martingwheeler/factorio:latest
 ```
 
 ### Use a specific save file:
+
 ```sh
 # First, put your save in ~/factorio/saves/my-world.zip
 docker run -d --name factorio-server \
@@ -171,7 +184,9 @@ docker run -d --name factorio-server \
 ```
 
 ### Create a save with custom map generation settings:
+
 Before starting the server, you can manually create a save with custom settings:
+
 ```sh
 docker run --rm -it --entrypoint /bin/bash \
   -v ~/factorio:/home/steam/factorio \
