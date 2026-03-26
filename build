@@ -2,15 +2,7 @@
 set -euo pipefail
 
 DOCKER_REPO="martingwheeler/terraria"
-DEFAULT_VERSION="1456"
-
-# Make it easy to commit a version pin file in repo
-if [ -f .terraria.env ]; then
-  # shellcheck disable=SC1091
-  source .terraria.env
-fi
-
-: "${TERRARIA_VERSION:=$DEFAULT_VERSION}"
+TERRARIA_VERSION="${TERRARIA_VERSION:-$(./scripts/get-terraria-version.sh)}"
 
 echo "Building ${DOCKER_REPO} (${TERRARIA_VERSION})..."
 

@@ -26,14 +26,9 @@ jobs:
         id: terraria_version
         run: |
           set -euo pipefail
-          DEFAULT_VERSION=1456
-          if [ -f .terraria.env ]; then
-            # shellcheck disable=SC1091
-            source .terraria.env
-          fi
-          TERRARIA_VERSION=${TERRARIA_VERSION:-$DEFAULT_VERSION}
+          TERRARIA_VERSION="$(./scripts/get-terraria-version.sh)"
           echo "TERRARIA_VERSION=$TERRARIA_VERSION"
-          echo "::set-output name=version::$TERRARIA_VERSION"
+          echo "version=$TERRARIA_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6

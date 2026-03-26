@@ -17,9 +17,10 @@ chown -R "${USER}:${USER}" "${HOMEDIR}/terraria" 2>/dev/null || true
 
 cd "${HOMEDIR}"
 
-# Defaults (can be overridden via ENV)
-if [ -z "${TERRARIA_VERSION}" ]; then
-  TERRARIA_VERSION=1455
+# The image build should always set TERRARIA_VERSION.
+if [ -z "${TERRARIA_VERSION:-}" ]; then
+  echo "TERRARIA_VERSION is required but not set" >&2
+  exit 1
 fi
 if [ -z "${TERRARIA_URL}" ]; then
   TERRARIA_URL="https://terraria.org/api/download/pc-dedicated-server/terraria-server-${TERRARIA_VERSION}.zip"
