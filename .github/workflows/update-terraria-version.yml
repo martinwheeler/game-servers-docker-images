@@ -1,0 +1,40 @@
+name: update-terraria-version
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Terraria branch
+        uses: actions/checkout@v4
+        with:
+          ref: game/terraria
+          fetch-depth: 0
+
+      - name: Update pinned Terraria version
+        run: ./scripts/update-terraria-version.sh
+
+      - name: Commit version bump
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet; then
+            echo "No version change detected"
+            exit 0
+          fi
+
+          version="$(./scripts/get-terraria-version.sh)"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .terraria.env
+          git commit -m "chore: bump Terraria version to ${version}"
+          git push origin HEAD:game/terraria

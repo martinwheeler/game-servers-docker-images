@@ -1,3 +1,0 @@
-#!/bin/bash
-docker build --target=bookworm-base -t martingwheeler/valheim:latest -t martingwheeler/valheim:base --no-cache .
-docker build --target=bookworm-plus -t martingwheeler/valheim:plus --no-cache .

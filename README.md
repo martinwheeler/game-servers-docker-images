@@ -1,78 +1,36 @@
-# What is Valheim?
-A brutal exploration and survival game for 1-10 players, set in a procedurally-generated purgatory inspired by Viking culture. Battle, build, and conquer your way to a saga worthy of Odin’s patronage!
+# Game Server Branch Automation
 
->  [Valheim](https://store.steampowered.com/app/892970/Valheim/)
+The `main` branch no longer builds a Docker image. Image definitions now live in the
+`game/*` branches, and `main` only keeps the shared automation needed to monitor Terraria
+server releases.
 
-<img src="https://static.wikia.nocookie.net/valheim/images/4/4c/Logo_valheim.png" alt="logo" width="300"/></img>
+## What lives here
 
-# How to use this image
+- `.github/workflows/update-terraria-version.yml` runs on a schedule and checks out `game/terraria`
+  before making any changes.
+- `.terraria.env` stores the pinned Terraria server version.
+- `scripts/get-terraria-version.sh` reads the currently pinned version.
+- `scripts/update-terraria-version.sh` checks Terraria's API and updates `.terraria.env` when a
+  newer dedicated server build is available.
 
-This image is a fork of [CM2Walki/Valheim](https://github.com/CM2Walki/Valheim) to add support for the [V+ Reforged](https://github.com/Grantapher/ValheimPlus) mod. The previous [Valheim Plus](https://github.com/valheimPlus/ValheimPlus) mod is no longer maintained.
+## How the scheduled updater works
 
-## Hosting a simple game server
+The workflow runs hourly and manually via `workflow_dispatch`. It checks out the
+`game/terraria` branch, updates `.terraria.env` when needed, commits the version bump, and pushes
+the change back to `origin/game/terraria`.
 
-Running on the *host* interface (recommended):<br/>
-```console
-$ docker run -d --net=host --name=valheim-dedicated martingwheeler/valheim
+## Local usage
+
+Read the pinned version:
+
+```sh
+./scripts/get-terraria-version.sh
 ```
 
-Running using a bind mount for data persistence on container recreation:
-```console
-$ mkdir -p $(pwd)/valheim-data
-$ chmod 777 $(pwd)/valheim-data # Makes sure the directory is writeable by the unprivileged container user
-$ docker run -d --net=host -v $(pwd)/valheim-data:/home/steam/valheim-dedicated/ --name=valheim-dedicated martingwheeler/valheim
----
-$ docker volume create valheim-plus-data # For valheim:plus - Create an additional world volume
-$ docker run -d --net=host -v $(pwd)/valheim-data:/home/steam/valheim-dedicated/ -v valheim-plus-data:/home/steam/.config/unity3d/IronGate/Valheim/ --name=valheim-plus-dedicated martingwheeler/valheim:plus
+Check for a newer Terraria server version and update `.terraria.env` locally:
+
+```sh
+./scripts/update-terraria-version.sh
 ```
 
-Running multiple instances (increment SERVER_PORT by two, there is no way to overwrite the steam query port, it will always be SERVER_PORT + 1!):
-```console
-$ docker run -d --net=host -e SERVER_PORT=2458 --name=valheim-dedicated2 martingwheeler/valheim
-```
-
-**It's also recommended to use "--cpuset-cpus=" to limit the game server to a specific core & thread.**<br/>
-**The container will automatically update the game on startup, so if there is a game update just restart the container.**
-
-# Configuration
-## Environment Variables
-Feel free to overwrite these environment variables, using -e (--env): 
-```dockerfile
-SERVER_PORT=2456 (Game Port (tcp & udp); Steam Query Port (udp) will be SERVER_PORT + 1)
-SERVER_PUBLIC=1
-SERVER_WORLD_NAME="BraveNewWorld"
-SERVER_PW="changeme"
-SERVER_NAME="New \"${STEAMAPP}\" Server"
-SERVER_LOG_PATH="logs_output/outputlog_server.txt"
-SERVER_SAVE_DIR="Worlds"
-SCREEN_QUALITY="Fastest"
-SCREEN_WIDTH=640
-SCREEN_HEIGHT=480
-STEAMCMD_UPDATE_ARGS="" (Gets appended here: +app_update [appid] [STEAMCMD_UPDATE_ARGS]; Example: "validate")
-ADDITIONAL_ARGS="" (Pass additional arguments to the server. Make sure to escape correctly!)
-```
-
-If you want to learn more about configuring a Valheim server check this [documentation](https://valheim.fandom.com/wiki/Hosting_Servers).
-
-## Config
-You can find the `adminlist.txt`, `bannedlist.txt` and `permittedlist.txt`:
-- `/home/steam/valheim-dedicated/Worlds` for tag `valheim:latest`
-- `/home/steam/.config/unity3d/IronGate/Valheim/Worlds` for tag `valheim:plus`
-
-The world database files can be found in:
-- `/home/steam/valheim-dedicated/Worlds/worlds` for tag `valheim:latest`
-- `/home/steam/.config/unity3d/IronGate/Valheim/` for tag `valheim:plus`
-
-# Image Variants:
-The `valheim` images come in two flavors, each designed for a specific use case.
-
-## `valheim:latest`
-This is the defacto image. If you are unsure about what your needs are, you probably want to use this one. It is a bare-minimum Valheim dedicated server containing no 3rd party plugins.<br/>
-
-## `valheim:plus`
-This is a specialized image. It contains the popular mod [V+ Reforged](https://github.com/Grantapher/ValheimPlus). 
-
-Note: The game world is saved in a different directory in this tag, make sure to create an additional volume for world persistency across container recreations. See [#Hosting a simple game server](#hosting-a-simple-game-server) above.
-
-# Contributors
-[![Contributors Display](https://badges.pufler.dev/contributors/martinwheeler/valheim?size=50&padding=5&bots=false)](https://github.com/martinwheeler/valheim/graphs/contributors)
+If the script reports no changes, the pinned version is already current.
