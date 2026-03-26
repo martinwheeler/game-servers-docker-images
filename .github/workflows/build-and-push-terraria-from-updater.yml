@@ -1,0 +1,107 @@
+name: build-and-push-terraria-from-updater
+
+on:
+  workflow_run:
+    workflows:
+      - update-terraria-version
+    types:
+      - completed
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.decide.outputs.should_build }}
+    steps:
+      - name: Decide whether a build is required
+        id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          if [ "${EVENT_NAME}" = "workflow_dispatch" ]; then
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ "${RUN_CONCLUSION}" != "success" ]; then
+            echo "Updater workflow did not succeed; skipping build"
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          artifacts_json="$(
+            curl -fsSL \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${REPOSITORY}/actions/runs/${RUN_ID}/artifacts"
+          )"
+
+          has_marker="$(
+            python3 -c '
+import json
+import sys
+
+data = json.load(sys.stdin)
+artifacts = data.get("artifacts", [])
+print("true" if any(a.get("name") == "terraria-version-bumped" for a in artifacts) else "false")
+' <<< "${artifacts_json}"
+          )"
+
+          echo "should_build=${has_marker}" >> "$GITHUB_OUTPUT"
+
+          if [ "${has_marker}" != "true" ]; then
+            echo "No version bump marker found; skipping build"
+          fi
+
+  docker:
+    needs: prepare
+    if: needs.prepare.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Terraria branch
+        uses: actions/checkout@v4
+        with:
+          ref: game/terraria
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Determine TERRARIA_VERSION
+        id: terraria_version
+        run: |
+          set -euo pipefail
+          TERRARIA_VERSION="$(./scripts/get-terraria-version.sh)"
+          echo "TERRARIA_VERSION=$TERRARIA_VERSION"
+          echo "version=$TERRARIA_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          no-cache: true
+          push: true
+          build-args: |
+            TERRARIA_VERSION=${{ steps.terraria_version.outputs.version }}
+          tags: |
+            martingwheeler/terraria:latest
+            martingwheeler/terraria:${{ steps.terraria_version.outputs.version }}

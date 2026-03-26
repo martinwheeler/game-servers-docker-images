@@ -22,19 +22,35 @@ jobs:
       - name: Update pinned Terraria version
         run: ./scripts/update-terraria-version.sh
 
-      - name: Commit version bump
+      - name: Detect version change
+        id: detect_change
         run: |
           set -euo pipefail
 
           if git diff --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No version change detected"
             exit 0
           fi
 
           version="$(./scripts/get-terraria-version.sh)"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload version bump marker
+        if: steps.detect_change.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraria-version-bumped
+          path: .terraria.env
+
+      - name: Commit version bump
+        if: steps.detect_change.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add .terraria.env
-          git commit -m "chore: bump Terraria version to ${version}"
+          git commit -m "chore: bump Terraria version to ${{ steps.detect_change.outputs.version }}"
           git push origin HEAD:game/terraria
