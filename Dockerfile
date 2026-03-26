@@ -7,8 +7,9 @@ LABEL maintainer="hello@martinwheeler.com.au"
 
 # Terraria-only image: downloads the official dedicated-server zip, extracts
 # the Linux binaries and runs the 64-bit server binary.
-ENV TERRARIA_VERSION=1455 \
-  TERRARIA_URL="https://terraria.org/api/download/pc-dedicated-server/terraria-server-1455.zip" \
+ARG TERRARIA_VERSION=1456
+ENV TERRARIA_VERSION=${TERRARIA_VERSION} \
+  TERRARIA_URL="https://terraria.org/api/download/pc-dedicated-server/terraria-server-${TERRARIA_VERSION}.zip" \
   # configuration vars (empty = prompt unless ADDITIONAL_ARGS overrides)
   TERRARIA_WORLD="Default" \
   TERRARIA_PORT="7777" \

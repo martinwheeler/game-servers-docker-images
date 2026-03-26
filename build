@@ -1,2 +1,23 @@
 #!/bin/bash
-docker build --no-cache -t martingwheeler/terraria:latest .
+set -euo pipefail
+
+DOCKER_REPO="martingwheeler/terraria"
+DEFAULT_VERSION="1456"
+
+# Make it easy to commit a version pin file in repo
+if [ -f .terraria.env ]; then
+  # shellcheck disable=SC1091
+  source .terraria.env
+fi
+
+: "${TERRARIA_VERSION:=$DEFAULT_VERSION}"
+
+echo "Building ${DOCKER_REPO} (${TERRARIA_VERSION})..."
+
+docker build --no-cache \
+  --build-arg TERRARIA_VERSION="${TERRARIA_VERSION}" \
+  -t "${DOCKER_REPO}:latest" \
+  -t "${DOCKER_REPO}:${TERRARIA_VERSION}" \
+  .
+
+echo "Build complete: ${DOCKER_REPO}:${TERRARIA_VERSION} and ${DOCKER_REPO}:latest"

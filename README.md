@@ -7,12 +7,27 @@ the Windows instructions.
 
 ## Quick start
 
+Pin your Terraria server version in `.terraria.env` and commit it:
+
+```sh
+cat > .terraria.env <<'EOF'
+TERRARIA_VERSION=1456
+EOF
+```
+
 Build the image:
 
 ```sh
 ./build
-# or
-docker build --no-cache -t martingwheeler/terraria:latest .
+# will produce:
+#  - martingwheeler/terraria:latest
+#  - martingwheeler/terraria:${TERRARIA_VERSION}
+
+# or manual build:
+# docker build --no-cache \
+#   --build-arg TERRARIA_VERSION=1456 \
+#   -t martingwheeler/terraria:latest \
+#   -t martingwheeler/terraria:1456 .
 ```
 
 Create a persistent world directory and give it wide permissions:
