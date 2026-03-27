@@ -1,2 +1,10 @@
 #!/bin/bash
-docker build --no-cache -t martingwheeler/factorio:latest .
+set -euo pipefail
+
+FACTORIO_VERSION="$(./scripts/get-factorio-version.sh)"
+
+docker build --no-cache \
+  --build-arg FACTORIO_VERSION="${FACTORIO_VERSION}" \
+  -t martingwheeler/factorio:latest \
+  -t martingwheeler/factorio:${FACTORIO_VERSION} \
+  .

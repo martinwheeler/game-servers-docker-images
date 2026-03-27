@@ -5,10 +5,12 @@ FROM cm2network/steamcmd:root
 
 LABEL maintainer="hello@martinwheeler.com.au"
 
+ARG FACTORIO_VERSION=2.0.76
+
 # Factorio-only image: downloads the official headless server, extracts
 # the Linux binaries and runs the 64-bit server binary.
-ENV FACTORIO_VERSION=2.0.73 \
-  FACTORIO_URL="https://www.factorio.com/get-download/2.0.73/headless/linux64" \
+ENV FACTORIO_VERSION="${FACTORIO_VERSION}" \
+  FACTORIO_URL="https://www.factorio.com/get-download/${FACTORIO_VERSION}/headless/linux64" \
   # server configuration (stored in server-settings.json)
   FACTORIO_SERVER_NAME="Factorio Server" \
   FACTORIO_SERVER_DESCRIPTION="Headless Factorio server" \

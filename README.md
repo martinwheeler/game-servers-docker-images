@@ -6,12 +6,17 @@ and provides convenient environment variables to configure `server-settings.json
 
 ## Quick start
 
-Build the image:
+Pin or inspect the Factorio headless version in `.factorio.env`, then build the image:
 
 ```sh
+./scripts/get-factorio-version.sh
 ./build
 # or
-docker build --no-cache -t martingwheeler/factorio:latest .
+FACTORIO_VERSION="$(./scripts/get-factorio-version.sh)"
+docker build --no-cache \
+  --build-arg FACTORIO_VERSION="${FACTORIO_VERSION}" \
+  -t martingwheeler/factorio:latest \
+  -t martingwheeler/factorio:${FACTORIO_VERSION} .
 ```
 
 Create a persistent directory for saves and configuration:
@@ -44,7 +49,7 @@ MSYS_NO_PATHCONV=1 docker run -d --name factorio-server \
 
 The container will automatically:
 
-- Download the Factorio headless server (2.0.73 by default)
+- Download the Factorio headless server pinned in `.factorio.env`
 - Generate a `server-settings.json` file from environment variables
 - Create an initial save file called `factorio-server.zip`
 - Start the server in headless mode
@@ -97,8 +102,8 @@ FACTORIO_SERVER_ADMINLIST     # Path to adminlist file (default: empty)
 ### Advanced
 
 ```sh
-FACTORIO_VERSION              # Server version to download (default: 2.0.73)
-FACTORIO_URL                  # Custom download URL (default: official headless)
+FACTORIO_VERSION              # Server version to download (default: pinned at build time)
+FACTORIO_URL                  # Custom download URL (default: derived from FACTORIO_VERSION)
 FACTORIO_REGENERATE_SETTINGS  # Force regenerate settings on each start (default: false)
 ADDITIONAL_ARGS               # Extra CLI flags to pass to the server binary
 ```
@@ -201,7 +206,7 @@ cd /home/steam/factorio
 ## Environment info
 
 - **Base image:** `cm2network/steamcmd:root` (steam user for file permissions)
-- **Server version:** 2.0.73 headless (Linux 64-bit)
+- **Server version:** pinned in `.factorio.env` and baked in at build time
 - **Default port:** 34197/tcp and 34197/udp (Factorio multiplayer)
 - **RCON port:** 27015/tcp (optional, only if password set)
 - **Working directory:** `/home/steam/factorio`
@@ -219,5 +224,11 @@ docker run -v C:/Users/username/factorio:/home/steam/factorio …
 ```
 
 ---
+
+## Automated version bumps
+
+The `update-factorio-version` workflow checks the official Factorio releases API, updates
+`.factorio.env` when the stable headless version changes, and commits the bump back to
+`game/factorio`. That commit then triggers the normal Docker build workflow.
 
 For official Factorio server documentation, see: https://wiki.factorio.com/Multiplayer

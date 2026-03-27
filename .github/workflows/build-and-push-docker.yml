@@ -7,6 +7,9 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -16,9 +19,22 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Determine FACTORIO_VERSION
+        id: factorio_version
+        run: |
+          set -euo pipefail
+          FACTORIO_VERSION="$(./scripts/get-factorio-version.sh)"
+          echo "FACTORIO_VERSION=$FACTORIO_VERSION"
+          echo "version=$FACTORIO_VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           no-cache: true
           push: true
-          tags: martingwheeler/factorio:latest
+          build-args: |
+            FACTORIO_VERSION=${{ steps.factorio_version.outputs.version }}
+          tags: |
+            martingwheeler/factorio:latest
+            martingwheeler/factorio:${{ steps.factorio_version.outputs.version }}

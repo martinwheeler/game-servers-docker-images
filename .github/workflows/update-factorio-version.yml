@@ -1,0 +1,41 @@
+name: update-factorio-version
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Factorio branch
+        uses: actions/checkout@v4
+        with:
+          ref: game/factorio
+          fetch-depth: 0
+          token: ${{ secrets.BRANCH_PUSH_TOKEN }}
+
+      - name: Update pinned Factorio version
+        run: ./scripts/update-factorio-version.sh
+
+      - name: Commit version bump
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet; then
+            echo "No version change detected"
+            exit 0
+          fi
+
+          version="$(./scripts/get-factorio-version.sh)"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .factorio.env
+          git commit -m "chore: bump Factorio version to ${version}"
+          git push origin HEAD:game/factorio
