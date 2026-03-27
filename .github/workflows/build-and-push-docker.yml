@@ -2,6 +2,24 @@ name: ci
 
 on:
   push:
+  workflow_dispatch:
+    inputs:
+      valheim_build_id:
+        description: Optional Valheim build ID override for this run
+        required: false
+        type: string
+      valheim_linux_depot_manifest_id:
+        description: Optional Valheim Linux depot manifest override for this run
+        required: false
+        type: string
+      valheim_shared_linux_depot_manifest_id:
+        description: Optional shared Linux depot manifest override for this run
+        required: false
+        type: string
+      valheim_plus_version:
+        description: Optional Valheim Plus version override for this run
+        required: false
+        type: string
 
 jobs:
   docker:
@@ -26,6 +44,24 @@ jobs:
           set -euo pipefail
           # shellcheck disable=SC1091
           source .valheim.env
+
+          INPUT_VALHEIM_BUILD_ID="${{ inputs.valheim_build_id }}"
+          INPUT_VALHEIM_LINUX_DEPOT_MANIFEST_ID="${{ inputs.valheim_linux_depot_manifest_id }}"
+          INPUT_VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID="${{ inputs.valheim_shared_linux_depot_manifest_id }}"
+          INPUT_VALHEIM_PLUS_VERSION="${{ inputs.valheim_plus_version }}"
+
+          if [ -n "$INPUT_VALHEIM_BUILD_ID" ]; then
+            VALHEIM_BUILD_ID="$INPUT_VALHEIM_BUILD_ID"
+          fi
+          if [ -n "$INPUT_VALHEIM_LINUX_DEPOT_MANIFEST_ID" ]; then
+            VALHEIM_LINUX_DEPOT_MANIFEST_ID="$INPUT_VALHEIM_LINUX_DEPOT_MANIFEST_ID"
+          fi
+          if [ -n "$INPUT_VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID" ]; then
+            VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID="$INPUT_VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID"
+          fi
+          if [ -n "$INPUT_VALHEIM_PLUS_VERSION" ]; then
+            VALHEIM_PLUS_VERSION="$INPUT_VALHEIM_PLUS_VERSION"
+          fi
 
           echo "VALHEIM_BUILD_ID=$VALHEIM_BUILD_ID"
           echo "VALHEIM_LINUX_DEPOT_MANIFEST_ID=$VALHEIM_LINUX_DEPOT_MANIFEST_ID"
