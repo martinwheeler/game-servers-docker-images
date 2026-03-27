@@ -2,6 +2,16 @@ name: ci
 
 on:
   push:
+  workflow_dispatch:
+    inputs:
+      minecraft_version:
+        description: Optional Minecraft version override for this run
+        required: false
+        type: string
+      paper_build:
+        description: Optional Paper build override for this run
+        required: false
+        type: string
 
 jobs:
   docker:
@@ -26,7 +36,10 @@ jobs:
         id: minecraft_version
         run: |
           set -euo pipefail
-          MINECRAFT_VERSION="$(./scripts/get-minecraft-version.sh)"
+          MINECRAFT_VERSION="${{ inputs.minecraft_version }}"
+          if [ -z "$MINECRAFT_VERSION" ]; then
+            MINECRAFT_VERSION="$(./scripts/get-minecraft-version.sh)"
+          fi
           echo "MINECRAFT_VERSION=$MINECRAFT_VERSION"
           echo "version=$MINECRAFT_VERSION" >> "$GITHUB_OUTPUT"
 
@@ -34,7 +47,10 @@ jobs:
         id: paper_build
         run: |
           set -euo pipefail
-          PAPER_BUILD="$(./scripts/get-paper-build.sh)"
+          PAPER_BUILD="${{ inputs.paper_build }}"
+          if [ -z "$PAPER_BUILD" ]; then
+            PAPER_BUILD="$(./scripts/get-paper-build.sh)"
+          fi
           echo "PAPER_BUILD=$PAPER_BUILD"
           echo "build=$PAPER_BUILD" >> "$GITHUB_OUTPUT"
 
