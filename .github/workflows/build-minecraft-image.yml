@@ -1,0 +1,68 @@
+name: build-minecraft-image
+
+on:
+  workflow_dispatch:
+    inputs:
+      minecraft_version:
+        description: Optional Minecraft version override for this run
+        required: false
+        type: string
+      paper_build:
+        description: Optional Paper build override for this run
+        required: false
+        type: string
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Minecraft branch
+        uses: actions/checkout@v4
+        with:
+          ref: game/minecraft
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Determine Minecraft version
+        id: minecraft_version
+        run: |
+          set -euo pipefail
+          MINECRAFT_VERSION="${{ inputs.minecraft_version }}"
+          if [ -z "$MINECRAFT_VERSION" ]; then
+            MINECRAFT_VERSION="$(./scripts/get-minecraft-version.sh)"
+          fi
+          echo "MINECRAFT_VERSION=$MINECRAFT_VERSION"
+          echo "version=$MINECRAFT_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Determine Paper build
+        id: paper_build
+        run: |
+          set -euo pipefail
+          PAPER_BUILD="${{ inputs.paper_build }}"
+          if [ -z "$PAPER_BUILD" ]; then
+            PAPER_BUILD="$(./scripts/get-paper-build.sh)"
+          fi
+          echo "PAPER_BUILD=$PAPER_BUILD"
+          echo "build=$PAPER_BUILD" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          no-cache: true
+          push: true
+          build-args: |
+            MINECRAFT_VERSION=${{ steps.minecraft_version.outputs.version }}
+            PAPER_BUILD=${{ steps.paper_build.outputs.build }}
+          tags: |
+            martingwheeler/minecraft:latest
+            martingwheeler/minecraft:${{ steps.minecraft_version.outputs.version }}-paper-${{ steps.paper_build.outputs.build }}

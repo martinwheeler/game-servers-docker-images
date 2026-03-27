@@ -1,0 +1,94 @@
+name: build-valheim-image
+
+on:
+  workflow_dispatch:
+    inputs:
+      valheim_build_id:
+        description: Optional Valheim build ID override for this run
+        required: false
+        type: string
+      valheim_linux_depot_manifest_id:
+        description: Optional Valheim Linux depot manifest override for this run
+        required: false
+        type: string
+      valheim_shared_linux_depot_manifest_id:
+        description: Optional shared Linux depot manifest override for this run
+        required: false
+        type: string
+      valheim_plus_version:
+        description: Optional Valheim Plus version override for this run
+        required: false
+        type: string
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Valheim branch
+        uses: actions/checkout@v4
+        with:
+          ref: game/valheim
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Determine pinned Valheim versions
+        id: valheim_version
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC1091
+          source .valheim.env
+
+          INPUT_VALHEIM_BUILD_ID="${{ inputs.valheim_build_id }}"
+          INPUT_VALHEIM_LINUX_DEPOT_MANIFEST_ID="${{ inputs.valheim_linux_depot_manifest_id }}"
+          INPUT_VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID="${{ inputs.valheim_shared_linux_depot_manifest_id }}"
+          INPUT_VALHEIM_PLUS_VERSION="${{ inputs.valheim_plus_version }}"
+
+          if [ -n "$INPUT_VALHEIM_BUILD_ID" ]; then
+            VALHEIM_BUILD_ID="$INPUT_VALHEIM_BUILD_ID"
+          fi
+          if [ -n "$INPUT_VALHEIM_LINUX_DEPOT_MANIFEST_ID" ]; then
+            VALHEIM_LINUX_DEPOT_MANIFEST_ID="$INPUT_VALHEIM_LINUX_DEPOT_MANIFEST_ID"
+          fi
+          if [ -n "$INPUT_VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID" ]; then
+            VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID="$INPUT_VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID"
+          fi
+          if [ -n "$INPUT_VALHEIM_PLUS_VERSION" ]; then
+            VALHEIM_PLUS_VERSION="$INPUT_VALHEIM_PLUS_VERSION"
+          fi
+
+          echo "VALHEIM_BUILD_ID=$VALHEIM_BUILD_ID"
+          echo "VALHEIM_LINUX_DEPOT_MANIFEST_ID=$VALHEIM_LINUX_DEPOT_MANIFEST_ID"
+          echo "VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID=$VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID"
+          echo "VALHEIM_PLUS_VERSION=$VALHEIM_PLUS_VERSION"
+
+          echo "build_id=$VALHEIM_BUILD_ID" >> "$GITHUB_OUTPUT"
+          echo "linux_manifest_id=$VALHEIM_LINUX_DEPOT_MANIFEST_ID" >> "$GITHUB_OUTPUT"
+          echo "shared_linux_manifest_id=$VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID" >> "$GITHUB_OUTPUT"
+          echo "plus_version=$VALHEIM_PLUS_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          no-cache: true
+          push: true
+          build-args: |
+            VALHEIM_BUILD_ID=${{ steps.valheim_version.outputs.build_id }}
+            VALHEIM_LINUX_DEPOT_MANIFEST_ID=${{ steps.valheim_version.outputs.linux_manifest_id }}
+            VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID=${{ steps.valheim_version.outputs.shared_linux_manifest_id }}
+            VALHEIM_PLUS_VERSION=${{ steps.valheim_version.outputs.plus_version }}
+          tags: |
+            martingwheeler/valheim:base
+            martingwheeler/valheim:latest
+            martingwheeler/valheim:${{ steps.valheim_version.outputs.build_id }}
+            martingwheeler/valheim:plus
+            martingwheeler/valheim:plus-${{ steps.valheim_version.outputs.build_id }}-${{ steps.valheim_version.outputs.plus_version }}
