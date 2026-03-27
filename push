@@ -1,2 +1,6 @@
 #!/bin/bash
-docker push --all-tags ${DOCKER_REPO} 
+set -euo pipefail
+
+DOCKER_REPO="${DOCKER_REPO:-martingwheeler/minecraft}"
+
+docker push --all-tags "${DOCKER_REPO}"

@@ -1,16 +1,15 @@
-# Terraria Dedicated Server Docker Image
+# Minecraft PaperMC Docker Image
 
-This repository builds a Docker image that runs the **Terraria** dedicated server. The container
-downloads the official server zip, extracts the Linux binaries, and provides convenient environment
-variables and a generated `serverconfig.txt` so you can use the same configuration mechanisms as
-the Windows instructions.
+This repository builds a Docker image that runs a **Minecraft** server using **PaperMC**.
+The image pins a Minecraft release and a Paper build separately, downloads that exact Paper jar
+at image build time, and starts the server with a lightweight Java runtime.
 
 ## Quick start
 
-Pin your Terraria server version in `.terraria.env` and commit it:
+Pin the current Paper release in `.minecraft.env` and commit it:
 
 ```sh
-printf 'TERRARIA_VERSION=%s\n' "$(./scripts/get-terraria-version.sh)" > .terraria.env
+./scripts/update-minecraft-version.sh
 ```
 
 Build the image:
@@ -18,87 +17,71 @@ Build the image:
 ```sh
 ./build
 # will produce:
-#  - martingwheeler/terraria:latest
-#  - martingwheeler/terraria:${TERRARIA_VERSION}
-
-# or manual build:
-# TERRARIA_VERSION="$(./scripts/get-terraria-version.sh)"
-# docker build --no-cache \
-#   --build-arg TERRARIA_VERSION="${TERRARIA_VERSION}" \
-#   -t martingwheeler/terraria:latest \
-#   -t martingwheeler/terraria:${TERRARIA_VERSION} .
+#  - martingwheeler/minecraft:latest
+#  - martingwheeler/minecraft:${MINECRAFT_VERSION}-paper-${PAPER_BUILD}
 ```
 
-Create a persistent world directory and give it wide permissions:
+Create a persistent server directory:
 
 ```sh
-mkdir -p ~/terraria-worlds
-chmod 777 ~/terraria-worlds
+mkdir -p ~/minecraft-server
+chmod 777 ~/minecraft-server
 ```
 
-Run the server using a host bind mount (recommended); map the host
-folder to `/home/steam/terraria`, which is where the server writes its
-world files and metadata:
+Run the server:
 
 ```sh
-docker run -d --name terraria-server \
-  -p 7777:7777/tcp -p 7777:7777/udp \
-  -v ~/terraria-worlds:/home/steam/terraria \
-  -e TERRARIA_AUTOCREATE=2 \
-  martingwheeler/terraria:latest
+docker run -d --name minecraft-server \
+  -p 25565:25565/tcp -p 25565:25565/udp \
+  -v ~/minecraft-server:/data \
+  -e EULA=TRUE \
+  martingwheeler/minecraft:latest
 ```
 
-The container will automatically download/update the Terraria server on startup.
+The server data lives in `/data`. On first start the container writes `eula.txt` and, if
+one does not already exist, a basic `server.properties`.
+The container runs as an unprivileged `minecraft` user, so host bind mounts need write permission.
 
-### Attached/interactive mode
+## Version pinning
 
-To type commands during startup or respond to prompts run with `-it --rm` instead of `-d` and omit
-`-e TERRARIA_AUTOCREATE` if you want to choose options manually.
+The image pin lives in `.minecraft.env`:
+
+```sh
+MINECRAFT_VERSION=1.21.11
+PAPER_BUILD=127
+```
+
+`MINECRAFT_VERSION` tracks the Minecraft release line, and `PAPER_BUILD` pins the exact stable
+Paper build used for the image.
 
 ## Configuration via environment variables
 
-The entry script creates a `serverconfig.txt` based on the following environment variables
-(provided as `-e VAR=value` to `docker run`). Any variable left unset is omitted from the file,
-and the server will prompt if it still needs input.
+These environment variables are available at runtime:
 
 ```sh
-TERRARIA_WORLD        # path or name of existing world file (.wld), e.g. MyWorld.wld
-TERRARIA_PORT         # default 7777
-TERRARIA_MAXPLAYERS   # maximum players
-TERRARIA_PASSWORD     # server password (empty for none)
-TERRARIA_WORLDNAME    # displayed name for the world
-TERRARIA_AUTOCREATE   # 1=small,2=medium,3=large (creates world if missing)
-TERRARIA_NOGUI        # any value will add the -nogui flag
-ADDITIONAL_ARGS       # extra CLI flags appended after -config
+EULA                 # must be TRUE
+MEMORY               # heap size for both -Xms and -Xmx, default 1G
+JAVA_OPTS            # extra JVM flags
+SERVER_PORT          # default 25565
+LEVEL_NAME           # default world
+MOTD                 # default "A PaperMC Server"
+MAX_PLAYERS          # default 20
+DIFFICULTY           # default easy
+GAMEMODE             # default survival
+ONLINE_MODE          # default true
+ENABLE_COMMAND_BLOCK # default false
+VIEW_DISTANCE        # default 10
+SIMULATION_DISTANCE  # default 10
+ADDITIONAL_ARGS      # extra arguments appended after --nogui
 ```
 
-Example with explicit port and password:
-
-```sh
-docker run --rm -it \
-  -v ~/terraria-worlds:/home/steam/terraria \
-  -e TERRARIA_PORT=7778 \
-  -e TERRARIA_PASSWORD=secret \
-  martingwheeler/terraria:latest
-```
-
-### Why use a config file?
-
-The official server accepts `-config serverconfig.txt`; writing the file via env vars lets you
-change settings without editing the container image or typing responses interactively. The
-`entry.sh` script prints where it generated the file and always passes `-config` when running.
-
-## Persisting data
-
-Mount a host directory or Docker volume at `/home/steam/terraria`. The server runs from that
-folder and writes worlds, metadata, and `favorites.json` there—make sure the `steam` user (UID 1000) has write permission. A host bind (`chmod 777`) avoids issues seen with named volumes.
+If you already have a `server.properties` file in your mounted data directory, the container
+will leave it in place and just start the server.
 
 ## Advanced use
 
-You can still bypass the entry script by running a shell
-`docker run --rm -it --entrypoint /bin/bash martingwheeler/terraria:latest` and starting
-`./TerrariaServer.bin.x86_64` yourself. Use this for debugging or custom startup logic.
+You can open a shell in the image for debugging:
 
----
-
-_This README replaces the original Valheim documentation – the repo now focuses solely on Terraria._
+```sh
+docker run --rm -it --entrypoint /bin/bash martingwheeler/minecraft:latest
+```

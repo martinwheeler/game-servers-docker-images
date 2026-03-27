@@ -1,15 +1,18 @@
 #!/bin/bash
 set -euo pipefail
 
-DOCKER_REPO="martingwheeler/terraria"
-TERRARIA_VERSION="${TERRARIA_VERSION:-$(./scripts/get-terraria-version.sh)}"
+DOCKER_REPO="martingwheeler/minecraft"
+MINECRAFT_VERSION="${MINECRAFT_VERSION:-$(./scripts/get-minecraft-version.sh)}"
+PAPER_BUILD="${PAPER_BUILD:-$(./scripts/get-paper-build.sh)}"
+IMAGE_TAG="${MINECRAFT_VERSION}-paper-${PAPER_BUILD}"
 
-echo "Building ${DOCKER_REPO} (${TERRARIA_VERSION})..."
+echo "Building ${DOCKER_REPO} (${IMAGE_TAG})..."
 
 docker build --no-cache \
-  --build-arg TERRARIA_VERSION="${TERRARIA_VERSION}" \
+  --build-arg MINECRAFT_VERSION="${MINECRAFT_VERSION}" \
+  --build-arg PAPER_BUILD="${PAPER_BUILD}" \
   -t "${DOCKER_REPO}:latest" \
-  -t "${DOCKER_REPO}:${TERRARIA_VERSION}" \
+  -t "${DOCKER_REPO}:${IMAGE_TAG}" \
   .
 
-echo "Build complete: ${DOCKER_REPO}:${TERRARIA_VERSION} and ${DOCKER_REPO}:latest"
+echo "Build complete: ${DOCKER_REPO}:${IMAGE_TAG} and ${DOCKER_REPO}:latest"

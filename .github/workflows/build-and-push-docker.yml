@@ -22,13 +22,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Determine TERRARIA_VERSION
-        id: terraria_version
+      - name: Determine Minecraft version
+        id: minecraft_version
         run: |
           set -euo pipefail
-          TERRARIA_VERSION="$(./scripts/get-terraria-version.sh)"
-          echo "TERRARIA_VERSION=$TERRARIA_VERSION"
-          echo "version=$TERRARIA_VERSION" >> "$GITHUB_OUTPUT"
+          MINECRAFT_VERSION="$(./scripts/get-minecraft-version.sh)"
+          echo "MINECRAFT_VERSION=$MINECRAFT_VERSION"
+          echo "version=$MINECRAFT_VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Determine Paper build
+        id: paper_build
+        run: |
+          set -euo pipefail
+          PAPER_BUILD="$(./scripts/get-paper-build.sh)"
+          echo "PAPER_BUILD=$PAPER_BUILD"
+          echo "build=$PAPER_BUILD" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -36,7 +44,8 @@ jobs:
           no-cache: true
           push: true
           build-args: |
-            TERRARIA_VERSION=${{ steps.terraria_version.outputs.version }}
+            MINECRAFT_VERSION=${{ steps.minecraft_version.outputs.version }}
+            PAPER_BUILD=${{ steps.paper_build.outputs.build }}
           tags: |
-            martingwheeler/terraria:latest
-            martingwheeler/terraria:${{ steps.terraria_version.outputs.version }}
+            martingwheeler/minecraft:latest
+            martingwheeler/minecraft:${{ steps.minecraft_version.outputs.version }}-paper-${{ steps.paper_build.outputs.build }}

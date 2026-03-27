@@ -1,46 +1,57 @@
 ###########################################################
-# Dockerfile that builds a Terraria dedicated server image
+# Dockerfile that builds a Minecraft PaperMC server image
 ###########################################################
-FROM cm2network/steamcmd:root
+FROM eclipse-temurin:21-jre-alpine
 
 LABEL maintainer="hello@martinwheeler.com.au"
 
-# Terraria-only image: downloads the official dedicated-server zip, extracts
-# the Linux binaries and runs the 64-bit server binary.
-ARG TERRARIA_VERSION
-ENV TERRARIA_VERSION=${TERRARIA_VERSION} \
-  TERRARIA_URL="https://terraria.org/api/download/pc-dedicated-server/terraria-server-${TERRARIA_VERSION}.zip" \
-  # configuration vars (empty = prompt unless ADDITIONAL_ARGS overrides)
-  TERRARIA_WORLD="Default" \
-  TERRARIA_PORT="7777" \
-  TERRARIA_MAXPLAYERS="16" \
-  TERRARIA_PASSWORD="12356" \
-  TERRARIA_WORLDNAME="" \
-  TERRARIA_AUTOCREATE="2" \
-  # set to any non-empty value to add -nogui flag on the command line
-  TERRARIA_NOGUI="1" \
+ARG MINECRAFT_VERSION
+ARG PAPER_BUILD
+
+ENV MINECRAFT_VERSION=${MINECRAFT_VERSION} \
+  PAPER_BUILD=${PAPER_BUILD} \
+  PAPER_PROJECT="paper" \
+  CONTAINER_HOME="/home/minecraft" \
+  SERVER_DIR="/data" \
+  EULA="FALSE" \
+  MEMORY="1G" \
+  JAVA_OPTS="" \
+  SERVER_PORT="25565" \
+  LEVEL_NAME="world" \
+  MOTD="A PaperMC Server" \
+  MAX_PLAYERS="20" \
+  DIFFICULTY="easy" \
+  GAMEMODE="survival" \
+  ONLINE_MODE="true" \
+  ENABLE_COMMAND_BLOCK="false" \
+  VIEW_DISTANCE="10" \
+  SIMULATION_DISTANCE="10" \
   ADDITIONAL_ARGS=""
 
-COPY "etc/entry.sh" "${HOMEDIR}/entry.sh"
-COPY "etc/tinientry.sh" "${HOMEDIR}/tinientry.sh"
+COPY "etc/entry.sh" "/usr/local/bin/entry.sh"
+COPY "etc/tinientry.sh" "/usr/local/bin/tinientry.sh"
 
-RUN set -x \
-  && apt-get update \
-  && apt-get install -y --no-install-recommends wget unzip ca-certificates tini \
-  && chmod +x "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" \
-  && chown -R "${USER}:${USER}" "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" \
-  && rm -rf /var/lib/apt/lists/*
+RUN set -eux \
+  && apk add --no-cache bash curl jq tini \
+  && addgroup -S minecraft \
+  && adduser -S -D -h "${CONTAINER_HOME}" -G minecraft minecraft \
+  && mkdir -p /opt/papermc "${SERVER_DIR}" "${CONTAINER_HOME}" \
+  && chmod +x /usr/local/bin/entry.sh /usr/local/bin/tinientry.sh \
+  && build_metadata="$(curl -fsSL "https://fill.papermc.io/v3/projects/${PAPER_PROJECT}/versions/${MINECRAFT_VERSION}/builds")" \
+  && download_url="$(printf '%s' "${build_metadata}" | jq -r --argjson build "${PAPER_BUILD}" '.[] | select(.id == $build and .channel == "STABLE") | .downloads["server:default"].url')" \
+  && checksum="$(printf '%s' "${build_metadata}" | jq -r --argjson build "${PAPER_BUILD}" '.[] | select(.id == $build and .channel == "STABLE") | .downloads["server:default"].checksums.sha256')" \
+  && if [ -z "${download_url}" ] || [ "${download_url}" = "null" ]; then echo "Could not resolve Paper download URL for Minecraft ${MINECRAFT_VERSION} build ${PAPER_BUILD}" >&2; exit 1; fi \
+  && curl -fsSL "${download_url}" -o /opt/papermc/paper.jar \
+  && echo "${checksum}  /opt/papermc/paper.jar" | sha256sum -c - \
+  && chown -R minecraft:minecraft /opt/papermc "${SERVER_DIR}" "${CONTAINER_HOME}"
 
-# Switch to unprivileged steam user provided by base image
-USER ${USER}
+USER minecraft
 
-WORKDIR ${HOMEDIR}
+WORKDIR /data
 
-# Overwrite Stopsignal for graceful server exits
 STOPSIGNAL SIGINT
 
-ENTRYPOINT ["tini", "-g", "--", "/home/steam/tinientry.sh"]
+ENTRYPOINT ["tini", "-g", "--", "/usr/local/bin/tinientry.sh"]
 
-# Expose Terraria default ports
-EXPOSE 7777/tcp \
-  7777/udp
+EXPOSE 25565/tcp \
+  25565/udp
