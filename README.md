@@ -34,7 +34,6 @@ Run the server:
 docker run -d --name minecraft-server \
   -p 25565:25565/tcp -p 25565:25565/udp \
   -v ~/minecraft-server:/data \
-  -e EULA=TRUE \
   martingwheeler/minecraft:latest
 ```
 
@@ -59,7 +58,7 @@ Paper build used for the image.
 These environment variables are available at runtime:
 
 ```sh
-EULA                 # must be TRUE
+EULA                 # default TRUE
 MEMORY               # heap size for both -Xms and -Xmx, default 1G
 JAVA_OPTS            # extra JVM flags
 SERVER_PORT          # default 25565
