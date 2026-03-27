@@ -2,6 +2,12 @@ name: ci
 
 on:
   push:
+  workflow_dispatch:
+    inputs:
+      terraria_version:
+        description: Optional Terraria version override for this run
+        required: false
+        type: string
 
 jobs:
   docker:
@@ -26,7 +32,10 @@ jobs:
         id: terraria_version
         run: |
           set -euo pipefail
-          TERRARIA_VERSION="$(./scripts/get-terraria-version.sh)"
+          TERRARIA_VERSION="${{ inputs.terraria_version }}"
+          if [ -z "$TERRARIA_VERSION" ]; then
+            TERRARIA_VERSION="$(./scripts/get-terraria-version.sh)"
+          fi
           echo "TERRARIA_VERSION=$TERRARIA_VERSION"
           echo "version=$TERRARIA_VERSION" >> "$GITHUB_OUTPUT"
 
