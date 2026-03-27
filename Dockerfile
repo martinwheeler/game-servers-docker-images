@@ -36,6 +36,7 @@ RUN set -eux \
   && addgroup -S minecraft \
   && adduser -S -D -h "${CONTAINER_HOME}" -G minecraft minecraft \
   && mkdir -p /opt/papermc "${SERVER_DIR}" "${CONTAINER_HOME}" \
+  && sed -i 's/\r$//' /usr/local/bin/entry.sh /usr/local/bin/tinientry.sh \
   && chmod +x /usr/local/bin/entry.sh /usr/local/bin/tinientry.sh \
   && build_metadata="$(curl -fsSL "https://fill.papermc.io/v3/projects/${PAPER_PROJECT}/versions/${MINECRAFT_VERSION}/builds")" \
   && download_url="$(printf '%s' "${build_metadata}" | jq -r --argjson build "${PAPER_BUILD}" '.[] | select(.id == $build and .channel == "STABLE") | .downloads["server:default"].url')" \
