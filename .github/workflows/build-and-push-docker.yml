@@ -2,6 +2,12 @@ name: ci
 
 on:
   push:
+  workflow_dispatch:
+    inputs:
+      factorio_version:
+        description: Optional Factorio version override for this run
+        required: false
+        type: string
 
 jobs:
   docker:
@@ -24,7 +30,10 @@ jobs:
         id: factorio_version
         run: |
           set -euo pipefail
-          FACTORIO_VERSION="$(./scripts/get-factorio-version.sh)"
+          FACTORIO_VERSION="${{ inputs.factorio_version }}"
+          if [ -z "$FACTORIO_VERSION" ]; then
+            FACTORIO_VERSION="$(./scripts/get-factorio-version.sh)"
+          fi
           echo "FACTORIO_VERSION=$FACTORIO_VERSION"
           echo "version=$FACTORIO_VERSION" >> "$GITHUB_OUTPUT"
 
