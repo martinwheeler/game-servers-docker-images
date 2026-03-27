@@ -1,14 +1,21 @@
-name: ci
+name: build-terraria-image
 
 on:
-  push:
+  workflow_dispatch:
+    inputs:
+      terraria_version:
+        description: Optional Terraria version override for this run
+        required: false
+        type: string
 
 jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Check out Terraria branch
         uses: actions/checkout@v4
+        with:
+          ref: game/terraria
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -22,11 +29,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Determine TERRARIA_VERSION
+      - name: Determine Terraria version
         id: terraria_version
         run: |
           set -euo pipefail
-          TERRARIA_VERSION="$(./scripts/get-terraria-version.sh)"
+          TERRARIA_VERSION="${{ inputs.terraria_version }}"
+          if [ -z "$TERRARIA_VERSION" ]; then
+            TERRARIA_VERSION="$(./scripts/get-terraria-version.sh)"
+          fi
           echo "TERRARIA_VERSION=$TERRARIA_VERSION"
           echo "version=$TERRARIA_VERSION" >> "$GITHUB_OUTPUT"
 
