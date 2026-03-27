@@ -1,6 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
+if [ "$(id -u)" = "0" ]; then
+  mkdir -p "${SERVER_DIR}" "${CONTAINER_HOME}"
+  chown -R "${PUID}:${PGID}" "${SERVER_DIR}" "${CONTAINER_HOME}"
+  exec su-exec "${PUID}:${PGID}" /usr/local/bin/entry.sh
+fi
+
 mkdir -p "${SERVER_DIR}"
 cd "${SERVER_DIR}"
 

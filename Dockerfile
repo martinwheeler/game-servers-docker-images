@@ -13,6 +13,8 @@ ENV MINECRAFT_VERSION=${MINECRAFT_VERSION} \
   PAPER_PROJECT="paper" \
   CONTAINER_HOME="/home/minecraft" \
   SERVER_DIR="/data" \
+  PUID="1000" \
+  PGID="1000" \
   EULA="TRUE" \
   MEMORY="1G" \
   JAVA_OPTS="" \
@@ -32,9 +34,9 @@ COPY "etc/entry.sh" "/usr/local/bin/entry.sh"
 COPY "etc/tinientry.sh" "/usr/local/bin/tinientry.sh"
 
 RUN set -eux \
-  && apk add --no-cache bash curl jq tini \
-  && addgroup -S minecraft \
-  && adduser -S -D -h "${CONTAINER_HOME}" -G minecraft minecraft \
+  && apk add --no-cache bash curl jq su-exec tini \
+  && addgroup -g 1000 -S minecraft \
+  && adduser -S -D -h "${CONTAINER_HOME}" -G minecraft -u 1000 minecraft \
   && mkdir -p /opt/papermc "${SERVER_DIR}" "${CONTAINER_HOME}" \
   && sed -i 's/\r$//' /usr/local/bin/entry.sh /usr/local/bin/tinientry.sh \
   && chmod +x /usr/local/bin/entry.sh /usr/local/bin/tinientry.sh \
@@ -45,8 +47,6 @@ RUN set -eux \
   && curl -fsSL "${download_url}" -o /opt/papermc/paper.jar \
   && echo "${checksum}  /opt/papermc/paper.jar" | sha256sum -c - \
   && chown -R minecraft:minecraft /opt/papermc "${SERVER_DIR}" "${CONTAINER_HOME}"
-
-USER minecraft
 
 WORKDIR /data
 
