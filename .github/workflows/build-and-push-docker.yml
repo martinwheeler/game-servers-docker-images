@@ -50,4 +50,6 @@ jobs:
           tags: |
             martingwheeler/valheim:base
             martingwheeler/valheim:latest
+            martingwheeler/valheim:${{ steps.valheim_plus_version.outputs.build_id }}
             martingwheeler/valheim:plus
+            martingwheeler/valheim:plus-${{ steps.valheim_plus_version.outputs.build_id }}-${{ steps.valheim_plus_version.outputs.plus_version }}

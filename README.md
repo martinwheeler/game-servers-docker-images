@@ -77,6 +77,11 @@ This is a specialized image. It contains the popular mod [V+ Reforged](https://g
 
 Note: The game world is saved in a different directory in this tag, make sure to create an additional volume for world persistency across container recreations. See [#Hosting a simple game server](#hosting-a-simple-game-server) above.
 
+Pinned image tags are also published so you can choose an exact build:
+
+- `martingwheeler/valheim:<VALHEIM_BUILD_ID>` for the base dedicated-server image
+- `martingwheeler/valheim:plus-<VALHEIM_BUILD_ID>-<VALHEIM_PLUS_VERSION>` for the V+ Reforged image
+
 ## Automated version bumps
 
 The `update-valheim-version` workflow checks the latest public Valheim dedicated-server build and
