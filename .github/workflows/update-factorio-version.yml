@@ -1,8 +1,6 @@
 name: update-factorio-version
 
 on:
-  schedule:
-    - cron: '0 * * * *'
   workflow_dispatch:
 
 permissions:
