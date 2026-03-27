@@ -9,6 +9,9 @@ A brutal exploration and survival game for 1-10 players, set in a procedurally-g
 
 This image is a fork of [CM2Walki/Valheim](https://github.com/CM2Walki/Valheim) to add support for the [V+ Reforged](https://github.com/Grantapher/ValheimPlus) mod. The previous [Valheim Plus](https://github.com/valheimPlus/ValheimPlus) mod is no longer maintained.
 
+The pinned dedicated-server build and V+ Reforged version for this branch live in `.valheim.env`.
+You can inspect them with `./scripts/get-valheim-build-id.sh` and `./scripts/get-valheim-version.sh`.
+
 ## Hosting a simple game server
 
 Running on the *host* interface (recommended):<br/>
@@ -32,7 +35,7 @@ $ docker run -d --net=host -e SERVER_PORT=2458 --name=valheim-dedicated2 marting
 ```
 
 **It's also recommended to use "--cpuset-cpus=" to limit the game server to a specific core & thread.**<br/>
-**The container will automatically update the game on startup, so if there is a game update just restart the container.**
+**The container installs the Valheim dedicated-server build pinned in `.valheim.env` on startup.**
 
 # Configuration
 ## Environment Variables
@@ -73,6 +76,12 @@ This is the defacto image. If you are unsure about what your needs are, you prob
 This is a specialized image. It contains the popular mod [V+ Reforged](https://github.com/Grantapher/ValheimPlus). 
 
 Note: The game world is saved in a different directory in this tag, make sure to create an additional volume for world persistency across container recreations. See [#Hosting a simple game server](#hosting-a-simple-game-server) above.
+
+## Automated version bumps
+
+The `update-valheim-version` workflow checks the latest public Valheim dedicated-server build and
+the latest V+ Reforged GitHub release, updates `.valheim.env` when either pin changes, and commits
+the bump back to `game/valheim`.
 
 # Contributors
 [![Contributors Display](https://badges.pufler.dev/contributors/martinwheeler/valheim?size=50&padding=5&bots=false)](https://github.com/martinwheeler/valheim/graphs/contributors)

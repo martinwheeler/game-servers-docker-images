@@ -1,0 +1,42 @@
+name: update-valheim-version
+
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Valheim branch
+        uses: actions/checkout@v4
+        with:
+          ref: game/valheim
+          fetch-depth: 0
+          token: ${{ secrets.BRANCH_PUSH_TOKEN }}
+
+      - name: Update pinned Valheim versions
+        run: ./scripts/update-valheim-version.sh
+
+      - name: Commit version bump
+        run: |
+          set -euo pipefail
+
+          if git diff --quiet; then
+            echo "No version change detected"
+            exit 0
+          fi
+
+          build_id="$(./scripts/get-valheim-build-id.sh)"
+          plus_version="$(./scripts/get-valheim-version.sh)"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .valheim.env
+          git commit -m "chore: bump Valheim build ${build_id} and V+ ${plus_version}"
+          git push origin HEAD:game/valheim

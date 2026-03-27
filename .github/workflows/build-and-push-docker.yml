@@ -7,6 +7,9 @@ jobs:
   docker:
     runs-on: ubuntu-latest
     steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -16,9 +19,35 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Determine pinned Valheim versions
+        id: valheim_plus_version
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC1091
+          source .valheim.env
+
+          echo "VALHEIM_BUILD_ID=$VALHEIM_BUILD_ID"
+          echo "VALHEIM_LINUX_DEPOT_MANIFEST_ID=$VALHEIM_LINUX_DEPOT_MANIFEST_ID"
+          echo "VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID=$VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID"
+          echo "VALHEIM_PLUS_VERSION=$VALHEIM_PLUS_VERSION"
+
+          echo "build_id=$VALHEIM_BUILD_ID" >> "$GITHUB_OUTPUT"
+          echo "linux_manifest_id=$VALHEIM_LINUX_DEPOT_MANIFEST_ID" >> "$GITHUB_OUTPUT"
+          echo "shared_linux_manifest_id=$VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID" >> "$GITHUB_OUTPUT"
+          echo "plus_version=$VALHEIM_PLUS_VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           no-cache: true
           push: true
-          tags: martingwheeler/valheim:base,martingwheeler/valheim:latest,martingwheeler/valheim:plus
+          build-args: |
+            VALHEIM_BUILD_ID=${{ steps.valheim_plus_version.outputs.build_id }}
+            VALHEIM_LINUX_DEPOT_MANIFEST_ID=${{ steps.valheim_plus_version.outputs.linux_manifest_id }}
+            VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID=${{ steps.valheim_plus_version.outputs.shared_linux_manifest_id }}
+            VALHEIM_PLUS_VERSION=${{ steps.valheim_plus_version.outputs.plus_version }}
+          tags: |
+            martingwheeler/valheim:base
+            martingwheeler/valheim:latest
+            martingwheeler/valheim:plus
