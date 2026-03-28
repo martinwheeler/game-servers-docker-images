@@ -87,8 +87,8 @@ jobs:
             VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID=${{ steps.valheim_version.outputs.shared_linux_manifest_id }}
             VALHEIM_PLUS_VERSION=${{ steps.valheim_version.outputs.plus_version }}
           tags: |
-            martingwheeler/valheim:base
-            martingwheeler/valheim:latest
-            martingwheeler/valheim:${{ steps.valheim_version.outputs.build_id }}
-            martingwheeler/valheim:plus
-            martingwheeler/valheim:plus-${{ steps.valheim_version.outputs.build_id }}-${{ steps.valheim_version.outputs.plus_version }}
+            servertimeio/valheim:base
+            servertimeio/valheim:latest
+            servertimeio/valheim:${{ steps.valheim_version.outputs.build_id }}
+            servertimeio/valheim:plus
+            servertimeio/valheim:plus-${{ steps.valheim_version.outputs.build_id }}-${{ steps.valheim_version.outputs.plus_version }}

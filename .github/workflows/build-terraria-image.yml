@@ -48,5 +48,5 @@ jobs:
           build-args: |
             TERRARIA_VERSION=${{ steps.terraria_version.outputs.version }}
           tags: |
-            martingwheeler/terraria:latest
-            martingwheeler/terraria:${{ steps.terraria_version.outputs.version }}
+            servertimeio/terraria:latest
+            servertimeio/terraria:${{ steps.terraria_version.outputs.version }}
