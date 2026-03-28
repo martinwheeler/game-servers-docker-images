@@ -22,10 +22,10 @@ This repository builds and publishes a Docker image for a Valheim dedicated serv
 - Build locally (examples in `build`):
   - `./build` (runs two `docker build` commands)
   - Equivalent manual commands:
-    - `docker build --target=bookworm-base -t martingwheeler/valheim:latest -t martingwheeler/valheim:base --no-cache .`
-    - `docker build --target=bookworm-plus -t martingwheeler/valheim:plus --no-cache .`
+    - `docker build --target=bookworm-base -t servertimeio/valheim:latest -t servertimeio/valheim:base --no-cache .`
+    - `docker build --target=bookworm-plus -t servertimeio/valheim:plus --no-cache .`
 - Push:
-  - `DOCKER_REPO=martingwheeler/valheim ./push` or run `./push` after exporting `DOCKER_REPO`.
+  - `DOCKER_REPO=servertimeio/valheim ./push` or run `./push` after exporting `DOCKER_REPO`.
 
 ## Runtime configuration (essential details)
 

@@ -9,15 +9,15 @@ docker build \
   --build-arg VALHEIM_BUILD_ID="${VALHEIM_BUILD_ID}" \
   --build-arg VALHEIM_LINUX_DEPOT_MANIFEST_ID="${VALHEIM_LINUX_DEPOT_MANIFEST_ID}" \
   --build-arg VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID="${VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID}" \
-  -t martingwheeler/valheim:latest \
-  -t martingwheeler/valheim:base \
-  -t martingwheeler/valheim:${VALHEIM_BUILD_ID} \
+  -t servertimeio/valheim:latest \
+  -t servertimeio/valheim:base \
+  -t servertimeio/valheim:${VALHEIM_BUILD_ID} \
   --no-cache .
 docker build --target=bookworm-plus \
   --build-arg VALHEIM_BUILD_ID="${VALHEIM_BUILD_ID}" \
   --build-arg VALHEIM_LINUX_DEPOT_MANIFEST_ID="${VALHEIM_LINUX_DEPOT_MANIFEST_ID}" \
   --build-arg VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID="${VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID}" \
   --build-arg VALHEIM_PLUS_VERSION="${VALHEIM_PLUS_VERSION}" \
-  -t martingwheeler/valheim:plus \
-  -t martingwheeler/valheim:plus-${VALHEIM_BUILD_ID}-${VALHEIM_PLUS_VERSION} \
+  -t servertimeio/valheim:plus \
+  -t servertimeio/valheim:plus-${VALHEIM_BUILD_ID}-${VALHEIM_PLUS_VERSION} \
   --no-cache .

@@ -16,22 +16,22 @@ You can inspect them with `./scripts/get-valheim-build-id.sh` and `./scripts/get
 
 Running on the *host* interface (recommended):<br/>
 ```console
-$ docker run -d --net=host --name=valheim-dedicated martingwheeler/valheim
+$ docker run -d --net=host --name=valheim-dedicated servertimeio/valheim
 ```
 
 Running using a bind mount for data persistence on container recreation:
 ```console
 $ mkdir -p $(pwd)/valheim-data
 $ chmod 777 $(pwd)/valheim-data # Makes sure the directory is writeable by the unprivileged container user
-$ docker run -d --net=host -v $(pwd)/valheim-data:/home/steam/valheim-dedicated/ --name=valheim-dedicated martingwheeler/valheim
+$ docker run -d --net=host -v $(pwd)/valheim-data:/home/steam/valheim-dedicated/ --name=valheim-dedicated servertimeio/valheim
 ---
 $ docker volume create valheim-plus-data # For valheim:plus - Create an additional world volume
-$ docker run -d --net=host -v $(pwd)/valheim-data:/home/steam/valheim-dedicated/ -v valheim-plus-data:/home/steam/.config/unity3d/IronGate/Valheim/ --name=valheim-plus-dedicated martingwheeler/valheim:plus
+$ docker run -d --net=host -v $(pwd)/valheim-data:/home/steam/valheim-dedicated/ -v valheim-plus-data:/home/steam/.config/unity3d/IronGate/Valheim/ --name=valheim-plus-dedicated servertimeio/valheim:plus
 ```
 
 Running multiple instances (increment SERVER_PORT by two, there is no way to overwrite the steam query port, it will always be SERVER_PORT + 1!):
 ```console
-$ docker run -d --net=host -e SERVER_PORT=2458 --name=valheim-dedicated2 martingwheeler/valheim
+$ docker run -d --net=host -e SERVER_PORT=2458 --name=valheim-dedicated2 servertimeio/valheim
 ```
 
 **It's also recommended to use "--cpuset-cpus=" to limit the game server to a specific core & thread.**<br/>
@@ -79,8 +79,8 @@ Note: The game world is saved in a different directory in this tag, make sure to
 
 Pinned image tags are also published so you can choose an exact build:
 
-- `martingwheeler/valheim:<VALHEIM_BUILD_ID>` for the base dedicated-server image
-- `martingwheeler/valheim:plus-<VALHEIM_BUILD_ID>-<VALHEIM_PLUS_VERSION>` for the V+ Reforged image
+- `servertimeio/valheim:<VALHEIM_BUILD_ID>` for the base dedicated-server image
+- `servertimeio/valheim:plus-<VALHEIM_BUILD_ID>-<VALHEIM_PLUS_VERSION>` for the V+ Reforged image
 
 ## Automated version bumps
 
