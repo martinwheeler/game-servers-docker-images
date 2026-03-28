@@ -5,6 +5,6 @@ FACTORIO_VERSION="$(./scripts/get-factorio-version.sh)"
 
 docker build --no-cache \
   --build-arg FACTORIO_VERSION="${FACTORIO_VERSION}" \
-  -t martingwheeler/factorio:latest \
-  -t martingwheeler/factorio:${FACTORIO_VERSION} \
+  -t servertimeio/factorio:latest \
+  -t servertimeio/factorio:${FACTORIO_VERSION} \
   .

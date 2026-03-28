@@ -36,5 +36,5 @@ jobs:
           build-args: |
             FACTORIO_VERSION=${{ steps.factorio_version.outputs.version }}
           tags: |
-            martingwheeler/factorio:latest
-            martingwheeler/factorio:${{ steps.factorio_version.outputs.version }}
+            servertimeio/factorio:latest
+            servertimeio/factorio:${{ steps.factorio_version.outputs.version }}

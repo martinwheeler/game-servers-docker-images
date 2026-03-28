@@ -15,8 +15,8 @@ Pin or inspect the Factorio headless version in `.factorio.env`, then build the 
 FACTORIO_VERSION="$(./scripts/get-factorio-version.sh)"
 docker build --no-cache \
   --build-arg FACTORIO_VERSION="${FACTORIO_VERSION}" \
-  -t martingwheeler/factorio:latest \
-  -t martingwheeler/factorio:${FACTORIO_VERSION} .
+  -t servertimeio/factorio:latest \
+  -t servertimeio/factorio:${FACTORIO_VERSION} .
 ```
 
 Create a persistent directory for saves and configuration:
@@ -35,7 +35,7 @@ Run the server using a host bind mount (recommended); map the host folder to
 docker run -d --name factorio-server \
   -p 34197:34197/tcp -p 34197:34197/udp \
   -v ~/factorio:/home/steam/factorio \
-  martingwheeler/factorio:latest
+  servertimeio/factorio:latest
 ```
 
 **On Windows with Git Bash:**
@@ -44,7 +44,7 @@ docker run -d --name factorio-server \
 MSYS_NO_PATHCONV=1 docker run -d --name factorio-server \
   -p 34197:34197/tcp -p 34197:34197/udp \
   -v ~/factorio:/home/steam/factorio \
-  martingwheeler/factorio:latest
+  servertimeio/factorio:latest
 ```
 
 The container will automatically:
@@ -119,7 +119,7 @@ docker run -d --name factorio-server \
   -e FACTORIO_SERVER_NAME="My Awesome Factory" \
   -e FACTORIO_GAME_PASSWORD="secret123" \
   -e FACTORIO_MAX_PLAYERS="10" \
-  martingwheeler/factorio:latest
+  servertimeio/factorio:latest
 ```
 
 ### With RCON enabled for remote administration:
@@ -131,7 +131,7 @@ docker run -d --name factorio-server \
   -v ~/factorio:/home/steam/factorio \
   -e FACTORIO_RCON_PASSWORD="admin123" \
   -e FACTORIO_SERVER_NAME="Factory with RCON" \
-  martingwheeler/factorio:latest
+  servertimeio/factorio:latest
 ```
 
 ### With custom autosave settings:
@@ -143,7 +143,7 @@ docker run -d --name factorio-server \
   -e FACTORIO_AUTOSAVE_INTERVAL="5" \
   -e FACTORIO_AUTOSAVE_SLOTS="10" \
   -e FACTORIO_PAUSE_WHEN_EMPTY="false" \
-  martingwheeler/factorio:latest
+  servertimeio/factorio:latest
 ```
 
 ### Interactive mode for debugging:
@@ -152,7 +152,7 @@ docker run -d --name factorio-server \
 docker run --rm -it \
   -p 34197:34197/tcp -p 34197:34197/udp \
   -v ~/factorio:/home/steam/factorio \
-  martingwheeler/factorio:latest
+  servertimeio/factorio:latest
 ```
 
 ## Persisting data
@@ -174,7 +174,7 @@ chmod 777 ~/factorio
 ### Run a shell for manual inspection:
 
 ```sh
-docker run --rm -it --entrypoint /bin/bash martingwheeler/factorio:latest
+docker run --rm -it --entrypoint /bin/bash servertimeio/factorio:latest
 ```
 
 ### Use a specific save file:
@@ -185,7 +185,7 @@ docker run -d --name factorio-server \
   -p 34197:34197/tcp -p 34197:34197/udp \
   -v ~/factorio:/home/steam/factorio \
   -e FACTORIO_SAVE_NAME="my-world" \
-  martingwheeler/factorio:latest
+  servertimeio/factorio:latest
 ```
 
 ### Create a save with custom map generation settings:
@@ -195,7 +195,7 @@ Before starting the server, you can manually create a save with custom settings:
 ```sh
 docker run --rm -it --entrypoint /bin/bash \
   -v ~/factorio:/home/steam/factorio \
-  martingwheeler/factorio:latest
+  servertimeio/factorio:latest
 
 # Inside container:
 cd /home/steam/factorio
