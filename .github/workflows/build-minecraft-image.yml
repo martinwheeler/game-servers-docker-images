@@ -64,5 +64,5 @@ jobs:
             MINECRAFT_VERSION=${{ steps.minecraft_version.outputs.version }}
             PAPER_BUILD=${{ steps.paper_build.outputs.build }}
           tags: |
-            martingwheeler/minecraft:latest
-            martingwheeler/minecraft:${{ steps.minecraft_version.outputs.version }}-paper-${{ steps.paper_build.outputs.build }}
+            servertimeio/minecraft:latest
+            servertimeio/minecraft:${{ steps.minecraft_version.outputs.version }}-paper-${{ steps.paper_build.outputs.build }}

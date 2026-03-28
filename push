@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-DOCKER_REPO="${DOCKER_REPO:-martingwheeler/minecraft}"
+DOCKER_REPO="${DOCKER_REPO:-servertimeio/minecraft}"
 
 docker push --all-tags "${DOCKER_REPO}"

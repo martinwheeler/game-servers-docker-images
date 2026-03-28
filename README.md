@@ -17,8 +17,8 @@ Build the image:
 ```sh
 ./build
 # will produce:
-#  - martingwheeler/minecraft:latest
-#  - martingwheeler/minecraft:${MINECRAFT_VERSION}-paper-${PAPER_BUILD}
+#  - servertimeio/minecraft:latest
+#  - servertimeio/minecraft:${MINECRAFT_VERSION}-paper-${PAPER_BUILD}
 ```
 
 Create a persistent server directory:
@@ -34,7 +34,7 @@ docker run -d --name minecraft-server \
   -p 25565:25565/tcp -p 25565:25565/udp \
   -e PUID="$(id -u)" -e PGID="$(id -g)" \
   -v ~/minecraft-server:/data \
-  martingwheeler/minecraft:latest
+  servertimeio/minecraft:latest
 ```
 
 The server data lives in `/data`. On first start the container writes `eula.txt` and, if
@@ -89,7 +89,7 @@ docker run -d --name minecraft-server \
   -p 25565:25565/tcp -p 25565:25565/udp \
   -e PUID="$(id -u)" -e PGID="$(id -g)" \
   -v ~/minecraft-server:/data \
-  martingwheeler/minecraft:latest
+  servertimeio/minecraft:latest
 ```
 
 ## Advanced use
@@ -97,5 +97,5 @@ docker run -d --name minecraft-server \
 You can open a shell in the image for debugging:
 
 ```sh
-docker run --rm -it --entrypoint /bin/bash martingwheeler/minecraft:latest
+docker run --rm -it --entrypoint /bin/bash servertimeio/minecraft:latest
 ```

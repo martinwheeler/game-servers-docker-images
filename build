@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-DOCKER_REPO="martingwheeler/minecraft"
+DOCKER_REPO="servertimeio/minecraft"
 MINECRAFT_VERSION="${MINECRAFT_VERSION:-$(./scripts/get-minecraft-version.sh)}"
 PAPER_BUILD="${PAPER_BUILD:-$(./scripts/get-paper-build.sh)}"
 IMAGE_TAG="${MINECRAFT_VERSION}-paper-${PAPER_BUILD}"
