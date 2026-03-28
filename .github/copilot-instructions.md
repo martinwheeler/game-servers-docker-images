@@ -19,8 +19,8 @@ This repository builds and publishes a Docker image for a **Terraria** dedicated
 ## Build / publish flows (concrete)
 
 - Build locally (examples in `build`):
-  - `./build` (runs a single `docker build --no-cache` command) to create `martingwheeler/terraria:latest`.
-- Push: use your preferred `docker push` command; a simple `docker push martingwheeler/terraria:latest` suffices.
+  - `./build` (runs a single `docker build --no-cache` command) to create `servertimeio/terraria:latest`.
+- Push: use your preferred `docker push` command; a simple `docker push servertimeio/terraria:latest` suffices.
   (there is no `push` script any longer).
 
 ## Runtime configuration (essential details)
