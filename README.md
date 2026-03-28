@@ -18,15 +18,15 @@ Build the image:
 ```sh
 ./build
 # will produce:
-#  - martingwheeler/terraria:latest
-#  - martingwheeler/terraria:${TERRARIA_VERSION}
+#  - servertimeio/terraria:latest
+#  - servertimeio/terraria:${TERRARIA_VERSION}
 
 # or manual build:
 # TERRARIA_VERSION="$(./scripts/get-terraria-version.sh)"
 # docker build --no-cache \
 #   --build-arg TERRARIA_VERSION="${TERRARIA_VERSION}" \
-#   -t martingwheeler/terraria:latest \
-#   -t martingwheeler/terraria:${TERRARIA_VERSION} .
+#   -t servertimeio/terraria:latest \
+#   -t servertimeio/terraria:${TERRARIA_VERSION} .
 ```
 
 Create a persistent world directory and give it wide permissions:
@@ -45,7 +45,7 @@ docker run -d --name terraria-server \
   -p 7777:7777/tcp -p 7777:7777/udp \
   -v ~/terraria-worlds:/home/steam/terraria \
   -e TERRARIA_AUTOCREATE=2 \
-  martingwheeler/terraria:latest
+  servertimeio/terraria:latest
 ```
 
 The container will automatically download/update the Terraria server on startup.
@@ -79,7 +79,7 @@ docker run --rm -it \
   -v ~/terraria-worlds:/home/steam/terraria \
   -e TERRARIA_PORT=7778 \
   -e TERRARIA_PASSWORD=secret \
-  martingwheeler/terraria:latest
+  servertimeio/terraria:latest
 ```
 
 ### Why use a config file?
@@ -96,7 +96,7 @@ folder and writes worlds, metadata, and `favorites.json` there—make sure the `
 ## Advanced use
 
 You can still bypass the entry script by running a shell
-`docker run --rm -it --entrypoint /bin/bash martingwheeler/terraria:latest` and starting
+`docker run --rm -it --entrypoint /bin/bash servertimeio/terraria:latest` and starting
 `./TerrariaServer.bin.x86_64` yourself. Use this for debugging or custom startup logic.
 
 ---

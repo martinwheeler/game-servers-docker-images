@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-DOCKER_REPO="martingwheeler/terraria"
+DOCKER_REPO="servertimeio/terraria"
 TERRARIA_VERSION="${TERRARIA_VERSION:-$(./scripts/get-terraria-version.sh)}"
 
 echo "Building ${DOCKER_REPO} (${TERRARIA_VERSION})..."
