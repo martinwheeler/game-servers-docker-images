@@ -67,13 +67,19 @@ PUID                 # runtime user id, default 1000
 PGID                 # runtime group id, default 1000
 SERVER_PORT          # default 25565
 LEVEL_NAME           # default world
+LEVEL_SEED           # default empty
+LEVEL_TYPE           # default minecraft:normal
 MOTD                 # default "A PaperMC Server"
 MAX_PLAYERS          # default 20
+MAX_BUILD_HEIGHT     # default 319
 DIFFICULTY           # default easy
 GAMEMODE             # default survival
 FORCE_GAMEMODE       # default false
 HARDCORE             # default false
 ONLINE_MODE          # default true
+PVP                  # default true
+SPAWN_PROTECTION     # default 16
+WHITE_LIST           # default false
 ENABLE_COMMAND_BLOCK # default false
 VIEW_DISTANCE        # default 10
 SIMULATION_DISTANCE  # default 10

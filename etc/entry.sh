@@ -30,12 +30,18 @@ force-gamemode=${FORCE_GAMEMODE}
 gamemode=${GAMEMODE}
 hardcore=${HARDCORE}
 level-name=${LEVEL_NAME}
+level-seed=${LEVEL_SEED}
+level-type=${LEVEL_TYPE}
 max-players=${MAX_PLAYERS}
+max-build-height=${MAX_BUILD_HEIGHT}
 motd=${MOTD}
 online-mode=${ONLINE_MODE}
+pvp=${PVP}
 server-port=${SERVER_PORT}
 simulation-distance=${SIMULATION_DISTANCE}
+spawn-protection=${SPAWN_PROTECTION}
 view-distance=${VIEW_DISTANCE}
+white-list=${WHITE_LIST}
 EOF
 fi
 
