@@ -72,6 +72,7 @@ MAX_PLAYERS          # default 20
 DIFFICULTY           # default easy
 GAMEMODE             # default survival
 FORCE_GAMEMODE       # default false
+HARDCORE             # default false
 ONLINE_MODE          # default true
 ENABLE_COMMAND_BLOCK # default false
 VIEW_DISTANCE        # default 10

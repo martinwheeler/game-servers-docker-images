@@ -28,6 +28,7 @@ enable-command-block=${ENABLE_COMMAND_BLOCK}
 difficulty=${DIFFICULTY}
 force-gamemode=${FORCE_GAMEMODE}
 gamemode=${GAMEMODE}
+hardcore=${HARDCORE}
 level-name=${LEVEL_NAME}
 max-players=${MAX_PLAYERS}
 motd=${MOTD}
