@@ -3,11 +3,12 @@ set -euo pipefail
 
 PROJECT_API_URL="https://fill.papermc.io/v3/projects/paper"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ENV_FILE="${ROOT_DIR}/.minecraft.paper.env"
 
 cd "${ROOT_DIR}"
 
-if [ ! -f .minecraft.env ]; then
-  echo ".minecraft.env is missing" >&2
+if [ ! -f "${ENV_FILE}" ]; then
+  echo "${ENV_FILE} is missing" >&2
   exit 1
 fi
 
@@ -49,7 +50,7 @@ print(max(stable_builds))
 ' <<< "${builds_response}"
 )"
 
-current_version="$(./scripts/get-minecraft-version.sh)"
+current_version="$(./scripts/get-minecraft-version.sh paper)"
 current_build="$(./scripts/get-paper-build.sh)"
 
 if [ "${current_version}" = "${latest_version}" ] && [ "${current_build}" = "${latest_build}" ]; then
@@ -70,7 +71,7 @@ build = os.environ["LATEST_BUILD"]
 root = pathlib.Path.cwd()
 
 replacements = {
-    root / ".minecraft.env": [
+    root / ".minecraft.paper.env": [
         (r"(?m)^MINECRAFT_VERSION=.*$", f"MINECRAFT_VERSION={version}"),
         (r"(?m)^PAPER_BUILD=.*$", f"PAPER_BUILD={build}"),
     ],

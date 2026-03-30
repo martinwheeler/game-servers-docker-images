@@ -2,5 +2,50 @@
 set -euo pipefail
 
 DOCKER_REPO="${DOCKER_REPO:-servertimeio/minecraft}"
+if [ "$#" -gt 0 ]; then
+  VARIANTS=("$@")
+else
+  VARIANTS=(paper fabric forge)
+fi
 
-docker push --all-tags "${DOCKER_REPO}"
+push_variant() {
+  local variant="$1"
+  local env_file=".minecraft.${variant}.env"
+  local mutable_tag
+  local pinned_tag
+
+  if [ ! -f "${env_file}" ]; then
+    echo "Missing ${env_file}" >&2
+    exit 1
+  fi
+
+  # shellcheck disable=SC1090
+  source "${env_file}"
+
+  case "${variant}" in
+    paper)
+      mutable_tag="${MINECRAFT_VERSION}-paper"
+      pinned_tag="${MINECRAFT_VERSION}-paper-${PAPER_BUILD}"
+      ;;
+    fabric)
+      mutable_tag="${MINECRAFT_VERSION}-fabric"
+      pinned_tag="${MINECRAFT_VERSION}-fabric-loader-${FABRIC_LOADER_VERSION}-installer-${FABRIC_INSTALLER_VERSION}"
+      ;;
+    forge)
+      mutable_tag="${MINECRAFT_VERSION}-forge"
+      pinned_tag="${MINECRAFT_VERSION}-forge-${FORGE_VERSION}"
+      ;;
+    *)
+      echo "Unsupported variant: ${variant}" >&2
+      exit 1
+      ;;
+  esac
+
+  docker push "${DOCKER_REPO}:${variant}-latest"
+  docker push "${DOCKER_REPO}:${mutable_tag}"
+  docker push "${DOCKER_REPO}:${pinned_tag}"
+}
+
+for variant in "${VARIANTS[@]}"; do
+  push_variant "${variant}"
+done

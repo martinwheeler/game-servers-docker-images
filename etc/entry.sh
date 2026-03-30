@@ -1,6 +1,23 @@
 #!/bin/bash
 set -euo pipefail
 
+write_jvm_args_file() {
+  if [ -z "${JVM_ARGS_FILE:-}" ]; then
+    return 0
+  fi
+
+  {
+    printf '%s\n' "-Xms${MEMORY}"
+    printf '%s\n' "-Xmx${MEMORY}"
+
+    if [ -n "${JAVA_OPTS}" ]; then
+      # shellcheck disable=SC2206
+      local java_opts_array=( ${JAVA_OPTS} )
+      printf '%s\n' "${java_opts_array[@]}"
+    fi
+  } > "${JVM_ARGS_FILE}"
+}
+
 if [ "$(id -u)" = "0" ]; then
   mkdir -p "${SERVER_DIR}" "${CONTAINER_HOME}"
   chown -R "${PUID}:${PGID}" "${SERVER_DIR}" "${CONTAINER_HOME}"
@@ -45,16 +62,40 @@ white-list=${WHITE_LIST}
 EOF
 fi
 
-echo "Starting PaperMC ${MINECRAFT_VERSION} build ${PAPER_BUILD}..."
+version_label="Minecraft ${MINECRAFT_VERSION}"
 
-cmd=(java "-Xms${MEMORY}" "-Xmx${MEMORY}")
-
-if [ -n "${JAVA_OPTS}" ]; then
-  # shellcheck disable=SC2206
-  cmd+=( ${JAVA_OPTS} )
+if [ -n "${SERVER_SOFTWARE_VERSION:-}" ]; then
+  version_label="${version_label} (${SERVER_SOFTWARE} ${SERVER_SOFTWARE_VERSION})"
+else
+  version_label="${version_label} (${SERVER_SOFTWARE})"
 fi
 
-cmd+=(-jar /opt/papermc/paper.jar --nogui)
+echo "Starting ${version_label}..."
+
+case "${SERVER_LAUNCH_MODE}" in
+  jar)
+    cmd=(java "-Xms${MEMORY}" "-Xmx${MEMORY}")
+
+    if [ -n "${JAVA_OPTS}" ]; then
+      # shellcheck disable=SC2206
+      cmd+=( ${JAVA_OPTS} )
+    fi
+
+    cmd+=(-jar "${SERVER_EXECUTABLE}")
+
+    if [ -n "${SERVER_NOGUI_FLAG:-}" ]; then
+      cmd+=("${SERVER_NOGUI_FLAG}")
+    fi
+    ;;
+  script)
+    write_jvm_args_file
+    cmd=("${SERVER_EXECUTABLE}")
+    ;;
+  *)
+    echo "Unsupported SERVER_LAUNCH_MODE: ${SERVER_LAUNCH_MODE}" >&2
+    exit 1
+    ;;
+esac
 
 if [ -n "${ADDITIONAL_ARGS}" ]; then
   # shellcheck disable=SC2206

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENV_FILE="${ROOT_DIR}/.minecraft.paper.env"
+ENV_FILE="${ROOT_DIR}/.minecraft.fabric.env"
 
 cd "${ROOT_DIR}"
 
@@ -14,9 +14,9 @@ fi
 # shellcheck disable=SC1091
 source "${ENV_FILE}"
 
-if [ -z "${PAPER_BUILD:-}" ]; then
-  echo "PAPER_BUILD is not set in ${ENV_FILE}" >&2
+if [ -z "${FABRIC_INSTALLER_VERSION:-}" ]; then
+  echo "FABRIC_INSTALLER_VERSION is not set in ${ENV_FILE}" >&2
   exit 1
 fi
 
-printf '%s\n' "${PAPER_BUILD}"
+printf '%s\n' "${FABRIC_INSTALLER_VERSION}"

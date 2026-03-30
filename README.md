@@ -1,67 +1,104 @@
-# Minecraft PaperMC Docker Image
+# Minecraft Docker Images
 
-This repository builds a Docker image that runs a **Minecraft** server using **PaperMC**.
-The image pins a Minecraft release and a Paper build separately, downloads that exact Paper jar
-at image build time, and starts the server with a lightweight Java runtime.
+This repository now builds three Minecraft Java server images from the same shared runtime layer:
 
-## Quick start
+- `paper`
+- `fabric`
+- `forge`
 
-Pin the current Paper release in `.minecraft.env` and commit it:
+Each loader has its own pinned version file, its own Dockerfile under `game/minecraft/<loader>/Dockerfile`,
+and its own image tags so the Minecraft version and loader version stay visible in the tag.
 
-```sh
-./scripts/update-minecraft-version.sh
-```
-
-Build the image:
+## Repository structure
 
 ```sh
-./build
-# will produce:
-#  - servertimeio/minecraft:latest
-#  - servertimeio/minecraft:${MINECRAFT_VERSION}-paper-${PAPER_BUILD}
+game/minecraft/paper/Dockerfile
+game/minecraft/fabric/Dockerfile
+game/minecraft/forge/Dockerfile
+etc/entry.sh
+etc/tinientry.sh
+.minecraft.paper.env
+.minecraft.fabric.env
+.minecraft.forge.env
 ```
 
-Create a persistent server directory:
-
-```sh
-mkdir -p ~/minecraft-server
-```
-
-Run the server:
-
-```sh
-docker run -d --name minecraft-server \
-  -p 25565:25565/tcp -p 25565:25565/udp \
-  -e PUID="$(id -u)" -e PGID="$(id -g)" \
-  -v ~/minecraft-server:/data \
-  servertimeio/minecraft:latest
-```
-
-The server data lives in `/data`. On first start the container writes `eula.txt` and, if
-one does not already exist, a basic `server.properties`.
-The container starts as root long enough to ensure `/data` is owned by the configured runtime
-UID/GID, then drops privileges before starting Paper. The recommended default on Linux is to pass
-`PUID="$(id -u)"` and `PGID="$(id -g)"` so the container matches the owner of the bind mount.
+The entrypoint is shared. Loader-specific behavior is selected through environment variables baked into
+each Dockerfile.
 
 ## Version pinning
 
-The image pin lives in `.minecraft.env`:
+Paper pins live in `.minecraft.paper.env`:
 
 ```sh
 MINECRAFT_VERSION=1.21.11
 PAPER_BUILD=127
 ```
 
-`MINECRAFT_VERSION` tracks the Minecraft release line, and `PAPER_BUILD` pins the exact stable
-Paper build used for the image.
+Fabric pins live in `.minecraft.fabric.env`:
 
-## Configuration via environment variables
+```sh
+MINECRAFT_VERSION=1.21.11
+FABRIC_LOADER_VERSION=0.16.10
+FABRIC_INSTALLER_VERSION=1.0.3
+```
 
-These environment variables are available at runtime:
+Forge pins live in `.minecraft.forge.env`:
+
+```sh
+MINECRAFT_VERSION=1.21.11
+FORGE_VERSION=61.0.3
+```
+
+That gives each loader a fully pinned tag:
+
+- `servertimeio/minecraft:1.21.11-paper-127`
+- `servertimeio/minecraft:1.21.11-fabric-loader-0.16.10-installer-1.0.3`
+- `servertimeio/minecraft:1.21.11-forge-61.0.3`
+
+It also gives each loader a moving alias within the same Minecraft line:
+
+- `servertimeio/minecraft:1.21.11-paper`
+- `servertimeio/minecraft:1.21.11-fabric`
+- `servertimeio/minecraft:1.21.11-forge`
+
+And a moving alias for the loader family:
+
+- `servertimeio/minecraft:paper-latest`
+- `servertimeio/minecraft:fabric-latest`
+- `servertimeio/minecraft:forge-latest`
+
+Avoid a shared `latest` tag unless you explicitly want one loader, such as Paper, to be the default.
+
+## Build locally
+
+Build all three images:
+
+```sh
+./build
+```
+
+Build just one loader:
+
+```sh
+./build paper
+./build fabric
+./build forge
+```
+
+Push the same tag set:
+
+```sh
+./push
+./push paper
+```
+
+## Runtime configuration
+
+All three images expose the same main runtime settings:
 
 ```sh
 EULA                 # default TRUE
-MEMORY               # heap size for both -Xms and -Xmx, default 1G
+MEMORY               # heap size, default 1G
 JAVA_OPTS            # extra JVM flags
 PUID                 # runtime user id, default 1000
 PGID                 # runtime group id, default 1000
@@ -69,7 +106,7 @@ SERVER_PORT          # default 25565
 LEVEL_NAME           # default world
 LEVEL_SEED           # default empty
 LEVEL_TYPE           # default minecraft:normal
-MOTD                 # default "A PaperMC Server"
+MOTD                 # loader-specific default
 MAX_PLAYERS          # default 20
 MAX_BUILD_HEIGHT     # default 319
 DIFFICULTY           # default easy
@@ -83,27 +120,37 @@ WHITE_LIST           # default false
 ENABLE_COMMAND_BLOCK # default false
 VIEW_DISTANCE        # default 10
 SIMULATION_DISTANCE  # default 10
-ADDITIONAL_ARGS      # extra arguments appended after --nogui
+ADDITIONAL_ARGS      # extra arguments appended to the launcher
 ```
 
-If you already have a `server.properties` file in your mounted data directory, the container
-will leave it in place and just start the server.
-
-On Linux hosts, `PUID` and `PGID` should usually match the owner of your bind-mounted server
-directory:
+Run the Paper image:
 
 ```sh
-docker run -d --name minecraft-server \
+mkdir -p ~/minecraft-paper
+
+docker run -d --name minecraft-paper \
   -p 25565:25565/tcp -p 25565:25565/udp \
   -e PUID="$(id -u)" -e PGID="$(id -g)" \
-  -v ~/minecraft-server:/data \
-  servertimeio/minecraft:latest
+  -v ~/minecraft-paper:/data \
+  servertimeio/minecraft:paper-latest
 ```
 
-## Advanced use
+The same container contract applies to Fabric and Forge. Only the image tag changes.
 
-You can open a shell in the image for debugging:
+## Version helpers
+
+These helper scripts read the loader pin files:
 
 ```sh
-docker run --rm -it --entrypoint /bin/bash servertimeio/minecraft:latest
+./scripts/get-minecraft-version.sh paper
+./scripts/get-minecraft-version.sh fabric
+./scripts/get-minecraft-version.sh forge
+./scripts/get-paper-build.sh
+./scripts/get-fabric-loader-version.sh
+./scripts/get-fabric-installer-version.sh
+./scripts/get-forge-version.sh
 ```
+
+`./scripts/update-minecraft-version.sh` still updates the Paper pins automatically. Fabric and Forge remain
+manually pinned for now, which keeps those builds predictable until you decide how you want to source their
+recommended versions.

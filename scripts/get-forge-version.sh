@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ENV_FILE="${ROOT_DIR}/.minecraft.paper.env"
+ENV_FILE="${ROOT_DIR}/.minecraft.forge.env"
 
 cd "${ROOT_DIR}"
 
@@ -14,9 +14,9 @@ fi
 # shellcheck disable=SC1091
 source "${ENV_FILE}"
 
-if [ -z "${PAPER_BUILD:-}" ]; then
-  echo "PAPER_BUILD is not set in ${ENV_FILE}" >&2
+if [ -z "${FORGE_VERSION:-}" ]; then
+  echo "FORGE_VERSION is not set in ${ENV_FILE}" >&2
   exit 1
 fi
 
-printf '%s\n' "${PAPER_BUILD}"
+printf '%s\n' "${FORGE_VERSION}"

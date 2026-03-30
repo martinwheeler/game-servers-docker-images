@@ -6,6 +6,13 @@ on:
 jobs:
   docker:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - paper
+          - fabric
+          - forge
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -22,30 +29,56 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Determine Minecraft version
-        id: minecraft_version
+      - name: Load version pins
+        id: pins
+        shell: bash
         run: |
           set -euo pipefail
-          MINECRAFT_VERSION="$(./scripts/get-minecraft-version.sh)"
-          echo "MINECRAFT_VERSION=$MINECRAFT_VERSION"
-          echo "version=$MINECRAFT_VERSION" >> "$GITHUB_OUTPUT"
+          variant="${{ matrix.variant }}"
+          env_file=".minecraft.${variant}.env"
+          source "${env_file}"
 
-      - name: Determine Paper build
-        id: paper_build
-        run: |
-          set -euo pipefail
-          PAPER_BUILD="$(./scripts/get-paper-build.sh)"
-          echo "PAPER_BUILD=$PAPER_BUILD"
-          echo "build=$PAPER_BUILD" >> "$GITHUB_OUTPUT"
+          echo "minecraft_version=${MINECRAFT_VERSION}" >> "$GITHUB_OUTPUT"
+
+          case "${variant}" in
+            paper)
+              echo "dockerfile=game/minecraft/paper/Dockerfile" >> "$GITHUB_OUTPUT"
+              echo "build_args<<EOF" >> "$GITHUB_OUTPUT"
+              echo "MINECRAFT_VERSION=${MINECRAFT_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "PAPER_BUILD=${PAPER_BUILD}" >> "$GITHUB_OUTPUT"
+              echo "EOF" >> "$GITHUB_OUTPUT"
+              echo "pinned_tag=${MINECRAFT_VERSION}-paper-${PAPER_BUILD}" >> "$GITHUB_OUTPUT"
+              echo "mutable_tag=${MINECRAFT_VERSION}-paper" >> "$GITHUB_OUTPUT"
+              ;;
+            fabric)
+              echo "dockerfile=game/minecraft/fabric/Dockerfile" >> "$GITHUB_OUTPUT"
+              echo "build_args<<EOF" >> "$GITHUB_OUTPUT"
+              echo "MINECRAFT_VERSION=${MINECRAFT_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "FABRIC_LOADER_VERSION=${FABRIC_LOADER_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "FABRIC_INSTALLER_VERSION=${FABRIC_INSTALLER_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "EOF" >> "$GITHUB_OUTPUT"
+              echo "pinned_tag=${MINECRAFT_VERSION}-fabric-loader-${FABRIC_LOADER_VERSION}-installer-${FABRIC_INSTALLER_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "mutable_tag=${MINECRAFT_VERSION}-fabric" >> "$GITHUB_OUTPUT"
+              ;;
+            forge)
+              echo "dockerfile=game/minecraft/forge/Dockerfile" >> "$GITHUB_OUTPUT"
+              echo "build_args<<EOF" >> "$GITHUB_OUTPUT"
+              echo "MINECRAFT_VERSION=${MINECRAFT_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "FORGE_VERSION=${FORGE_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "EOF" >> "$GITHUB_OUTPUT"
+              echo "pinned_tag=${MINECRAFT_VERSION}-forge-${FORGE_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "mutable_tag=${MINECRAFT_VERSION}-forge" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
 
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
           no-cache: true
           push: true
-          build-args: |
-            MINECRAFT_VERSION=${{ steps.minecraft_version.outputs.version }}
-            PAPER_BUILD=${{ steps.paper_build.outputs.build }}
+          file: ${{ steps.pins.outputs.dockerfile }}
+          build-args: ${{ steps.pins.outputs.build_args }}
           tags: |
-            servertimeio/minecraft:latest
-            servertimeio/minecraft:${{ steps.minecraft_version.outputs.version }}-paper-${{ steps.paper_build.outputs.build }}
+            servertimeio/minecraft:${{ matrix.variant }}-latest
+            servertimeio/minecraft:${{ steps.pins.outputs.mutable_tag }}
+            servertimeio/minecraft:${{ steps.pins.outputs.pinned_tag }}

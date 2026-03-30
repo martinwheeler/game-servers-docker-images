@@ -1,0 +1,68 @@
+FROM eclipse-temurin:21-jre-alpine
+
+LABEL maintainer="hello@martinwheeler.com.au"
+
+ARG MINECRAFT_VERSION
+ARG FORGE_VERSION
+
+ENV MINECRAFT_VERSION="${MINECRAFT_VERSION}" \
+  SERVER_SOFTWARE="Forge" \
+  SERVER_SOFTWARE_FAMILY="forge" \
+  SERVER_SOFTWARE_VERSION="${FORGE_VERSION}" \
+  FORGE_VERSION="${FORGE_VERSION}" \
+  SERVER_EXECUTABLE="/opt/minecraft/run.sh" \
+  SERVER_LAUNCH_MODE="script" \
+  JVM_ARGS_FILE="/opt/minecraft/user_jvm_args.txt" \
+  CONTAINER_HOME="/home/minecraft" \
+  SERVER_DIR="/data" \
+  PUID="1000" \
+  PGID="1000" \
+  EULA="TRUE" \
+  MEMORY="1G" \
+  JAVA_OPTS="" \
+  SERVER_PORT="25565" \
+  LEVEL_NAME="world" \
+  LEVEL_SEED="" \
+  LEVEL_TYPE="minecraft:normal" \
+  MOTD="A Forge Server" \
+  MAX_PLAYERS="20" \
+  MAX_BUILD_HEIGHT="319" \
+  DIFFICULTY="easy" \
+  GAMEMODE="survival" \
+  FORCE_GAMEMODE="false" \
+  HARDCORE="false" \
+  ONLINE_MODE="true" \
+  PVP="true" \
+  SPAWN_PROTECTION="16" \
+  WHITE_LIST="false" \
+  ENABLE_COMMAND_BLOCK="false" \
+  VIEW_DISTANCE="10" \
+  SIMULATION_DISTANCE="10" \
+  ADDITIONAL_ARGS=""
+
+COPY "etc/entry.sh" "/usr/local/bin/entry.sh"
+COPY "etc/tinientry.sh" "/usr/local/bin/tinientry.sh"
+
+RUN set -eux \
+  && apk add --no-cache bash curl su-exec tini \
+  && addgroup -g 1000 -S minecraft \
+  && adduser -S -D -h "${CONTAINER_HOME}" -G minecraft -u 1000 minecraft \
+  && mkdir -p /opt/minecraft "${SERVER_DIR}" "${CONTAINER_HOME}" \
+  && sed -i 's/\r$//' /usr/local/bin/entry.sh /usr/local/bin/tinientry.sh \
+  && chmod +x /usr/local/bin/entry.sh /usr/local/bin/tinientry.sh \
+  && installer_url="https://maven.minecraftforge.net/net/minecraftforge/forge/${MINECRAFT_VERSION}-${FORGE_VERSION}/forge-${MINECRAFT_VERSION}-${FORGE_VERSION}-installer.jar" \
+  && curl -fsSL "${installer_url}" -o /tmp/forge-installer.jar \
+  && java -jar /tmp/forge-installer.jar --installServer /opt/minecraft \
+  && rm -f /tmp/forge-installer.jar \
+  && chmod +x /opt/minecraft/run.sh \
+  && : > "${JVM_ARGS_FILE}" \
+  && chown -R minecraft:minecraft /opt/minecraft "${SERVER_DIR}" "${CONTAINER_HOME}"
+
+WORKDIR /data
+
+STOPSIGNAL SIGINT
+
+ENTRYPOINT ["tini", "-g", "--", "/usr/local/bin/tinientry.sh"]
+
+EXPOSE 25565/tcp \
+  25565/udp

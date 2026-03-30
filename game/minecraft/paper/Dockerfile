@@ -1,6 +1,3 @@
-###########################################################
-# Dockerfile that builds a Minecraft PaperMC server image
-###########################################################
 FROM eclipse-temurin:21-jre-alpine
 
 LABEL maintainer="hello@martinwheeler.com.au"
@@ -8,9 +5,15 @@ LABEL maintainer="hello@martinwheeler.com.au"
 ARG MINECRAFT_VERSION
 ARG PAPER_BUILD
 
-ENV MINECRAFT_VERSION=${MINECRAFT_VERSION} \
-  PAPER_BUILD=${PAPER_BUILD} \
+ENV MINECRAFT_VERSION="${MINECRAFT_VERSION}" \
+  SERVER_SOFTWARE="PaperMC" \
+  SERVER_SOFTWARE_FAMILY="paper" \
+  SERVER_SOFTWARE_VERSION="${PAPER_BUILD}" \
+  PAPER_BUILD="${PAPER_BUILD}" \
   PAPER_PROJECT="paper" \
+  SERVER_EXECUTABLE="/opt/minecraft/server.jar" \
+  SERVER_LAUNCH_MODE="jar" \
+  SERVER_NOGUI_FLAG="--nogui" \
   CONTAINER_HOME="/home/minecraft" \
   SERVER_DIR="/data" \
   PUID="1000" \
@@ -45,16 +48,16 @@ RUN set -eux \
   && apk add --no-cache bash curl jq su-exec tini \
   && addgroup -g 1000 -S minecraft \
   && adduser -S -D -h "${CONTAINER_HOME}" -G minecraft -u 1000 minecraft \
-  && mkdir -p /opt/papermc "${SERVER_DIR}" "${CONTAINER_HOME}" \
+  && mkdir -p /opt/minecraft "${SERVER_DIR}" "${CONTAINER_HOME}" \
   && sed -i 's/\r$//' /usr/local/bin/entry.sh /usr/local/bin/tinientry.sh \
   && chmod +x /usr/local/bin/entry.sh /usr/local/bin/tinientry.sh \
   && build_metadata="$(curl -fsSL "https://fill.papermc.io/v3/projects/${PAPER_PROJECT}/versions/${MINECRAFT_VERSION}/builds")" \
   && download_url="$(printf '%s' "${build_metadata}" | jq -r --argjson build "${PAPER_BUILD}" '.[] | select(.id == $build and .channel == "STABLE") | .downloads["server:default"].url')" \
   && checksum="$(printf '%s' "${build_metadata}" | jq -r --argjson build "${PAPER_BUILD}" '.[] | select(.id == $build and .channel == "STABLE") | .downloads["server:default"].checksums.sha256')" \
   && if [ -z "${download_url}" ] || [ "${download_url}" = "null" ]; then echo "Could not resolve Paper download URL for Minecraft ${MINECRAFT_VERSION} build ${PAPER_BUILD}" >&2; exit 1; fi \
-  && curl -fsSL "${download_url}" -o /opt/papermc/paper.jar \
-  && echo "${checksum}  /opt/papermc/paper.jar" | sha256sum -c - \
-  && chown -R minecraft:minecraft /opt/papermc "${SERVER_DIR}" "${CONTAINER_HOME}"
+  && curl -fsSL "${download_url}" -o "${SERVER_EXECUTABLE}" \
+  && echo "${checksum}  ${SERVER_EXECUTABLE}" | sha256sum -c - \
+  && chown -R minecraft:minecraft /opt/minecraft "${SERVER_DIR}" "${CONTAINER_HOME}"
 
 WORKDIR /data
 

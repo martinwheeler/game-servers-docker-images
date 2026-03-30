@@ -1,18 +1,77 @@
 #!/bin/bash
 set -euo pipefail
 
-DOCKER_REPO="servertimeio/minecraft"
-MINECRAFT_VERSION="${MINECRAFT_VERSION:-$(./scripts/get-minecraft-version.sh)}"
-PAPER_BUILD="${PAPER_BUILD:-$(./scripts/get-paper-build.sh)}"
-IMAGE_TAG="${MINECRAFT_VERSION}-paper-${PAPER_BUILD}"
+DOCKER_REPO="${DOCKER_REPO:-servertimeio/minecraft}"
+if [ "$#" -gt 0 ]; then
+  VARIANTS=("$@")
+else
+  VARIANTS=(paper fabric forge)
+fi
 
-echo "Building ${DOCKER_REPO} (${IMAGE_TAG})..."
+build_variant() {
+  local variant="$1"
+  local env_file=".minecraft.${variant}.env"
+  local dockerfile="game/minecraft/${variant}/Dockerfile"
+  local minecraft_version
+  local mutable_tag
+  local pinned_tag
+  local build_args=()
 
-docker build --no-cache \
-  --build-arg MINECRAFT_VERSION="${MINECRAFT_VERSION}" \
-  --build-arg PAPER_BUILD="${PAPER_BUILD}" \
-  -t "${DOCKER_REPO}:latest" \
-  -t "${DOCKER_REPO}:${IMAGE_TAG}" \
-  .
+  if [ ! -f "${env_file}" ]; then
+    echo "Missing ${env_file}" >&2
+    exit 1
+  fi
 
-echo "Build complete: ${DOCKER_REPO}:${IMAGE_TAG} and ${DOCKER_REPO}:latest"
+  # shellcheck disable=SC1090
+  source "${env_file}"
+
+  case "${variant}" in
+    paper)
+      pinned_tag="${MINECRAFT_VERSION}-paper-${PAPER_BUILD}"
+      mutable_tag="${MINECRAFT_VERSION}-paper"
+      build_args+=(
+        --build-arg "MINECRAFT_VERSION=${MINECRAFT_VERSION}"
+        --build-arg "PAPER_BUILD=${PAPER_BUILD}"
+      )
+      ;;
+    fabric)
+      pinned_tag="${MINECRAFT_VERSION}-fabric-loader-${FABRIC_LOADER_VERSION}-installer-${FABRIC_INSTALLER_VERSION}"
+      mutable_tag="${MINECRAFT_VERSION}-fabric"
+      build_args+=(
+        --build-arg "MINECRAFT_VERSION=${MINECRAFT_VERSION}"
+        --build-arg "FABRIC_LOADER_VERSION=${FABRIC_LOADER_VERSION}"
+        --build-arg "FABRIC_INSTALLER_VERSION=${FABRIC_INSTALLER_VERSION}"
+      )
+      ;;
+    forge)
+      pinned_tag="${MINECRAFT_VERSION}-forge-${FORGE_VERSION}"
+      mutable_tag="${MINECRAFT_VERSION}-forge"
+      build_args+=(
+        --build-arg "MINECRAFT_VERSION=${MINECRAFT_VERSION}"
+        --build-arg "FORGE_VERSION=${FORGE_VERSION}"
+      )
+      ;;
+    *)
+      echo "Unsupported variant: ${variant}" >&2
+      exit 1
+      ;;
+  esac
+
+  minecraft_version="${MINECRAFT_VERSION}"
+
+  echo "Building ${DOCKER_REPO} (${variant}, Minecraft ${minecraft_version})..."
+
+  docker build --no-cache \
+    -f "${dockerfile}" \
+    "${build_args[@]}" \
+    -t "${DOCKER_REPO}:${variant}-latest" \
+    -t "${DOCKER_REPO}:${mutable_tag}" \
+    -t "${DOCKER_REPO}:${pinned_tag}" \
+    .
+
+  echo "Built ${DOCKER_REPO}:${pinned_tag}"
+}
+
+for variant in "${VARIANTS[@]}"; do
+  build_variant "${variant}"
+done
