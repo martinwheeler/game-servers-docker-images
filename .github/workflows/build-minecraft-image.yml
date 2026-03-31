@@ -3,19 +3,106 @@ name: build-minecraft-image
 on:
   workflow_dispatch:
     inputs:
-      variant:
-        description: Loader to build
+      builds:
+        description: "One build per line. paper|<mc>|<paper_build>, fabric|<mc>|<loader>|<installer>, forge|<mc>|<forge_version>"
         required: true
-        default: paper
-        type: choice
-        options:
-          - paper
-          - fabric
-          - forge
+        default: |
+          paper|1.21.11|127
+          fabric|1.21.11|0.18.5|1.1.1
+          forge|1.21.11|61.1.0
 
 jobs:
-  docker:
+  prepare:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.parse.outputs.matrix }}
+    steps:
+      - name: Parse requested builds
+        id: parse
+        shell: bash
+        env:
+          INPUT_BUILDS: ${{ inputs.builds }}
+        run: |
+          set -euo pipefail
+
+          matrix_json="$(python3 - <<'PY'
+          import json
+          import os
+          import sys
+
+          raw = os.environ.get("INPUT_BUILDS", "").replace("\r\n", "\n")
+          entries = []
+
+          for index, original_line in enumerate(raw.splitlines(), start=1):
+              line = original_line.strip()
+              if not line or line.startswith("#"):
+                  continue
+
+              parts = [part.strip() for part in line.split("|")]
+              variant = parts[0] if parts else ""
+
+              if variant == "paper":
+                  if len(parts) != 3 or not parts[1] or not parts[2]:
+                      sys.exit(
+                          f"Invalid paper build on line {index}: '{original_line}'. "
+                          "Expected paper|<minecraft_version>|<paper_build>."
+                      )
+                  entries.append(
+                      {
+                          "variant": "paper",
+                          "minecraft_version": parts[1],
+                          "paper_build": parts[2],
+                      }
+                  )
+              elif variant == "fabric":
+                  if len(parts) != 4 or not parts[1] or not parts[2] or not parts[3]:
+                      sys.exit(
+                          f"Invalid fabric build on line {index}: '{original_line}'. "
+                          "Expected fabric|<minecraft_version>|<loader_version>|<installer_version>."
+                      )
+                  entries.append(
+                      {
+                          "variant": "fabric",
+                          "minecraft_version": parts[1],
+                          "fabric_loader_version": parts[2],
+                          "fabric_installer_version": parts[3],
+                      }
+                  )
+              elif variant == "forge":
+                  if len(parts) != 3 or not parts[1] or not parts[2]:
+                      sys.exit(
+                          f"Invalid forge build on line {index}: '{original_line}'. "
+                          "Expected forge|<minecraft_version>|<forge_version>."
+                      )
+                  entries.append(
+                      {
+                          "variant": "forge",
+                          "minecraft_version": parts[1],
+                          "forge_version": parts[2],
+                      }
+                  )
+              else:
+                  sys.exit(
+                      f"Invalid build variant on line {index}: '{original_line}'. "
+                      "Supported variants are paper, fabric, and forge."
+                  )
+
+          if not entries:
+              sys.exit("No builds were provided. Add at least one non-empty build line.")
+
+          print(json.dumps({"include": entries}))
+          PY
+          )"
+
+          echo "matrix=${matrix_json}" >> "$GITHUB_OUTPUT"
+
+  docker:
+    needs: prepare
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix: ${{ fromJSON(needs.prepare.outputs.matrix) }}
     steps:
       - name: Check out Minecraft branch
         uses: actions/checkout@v4
@@ -39,36 +126,39 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          variant="${{ inputs.variant }}"
-          env_file=".minecraft.${variant}.env"
-          source "${env_file}"
+          variant="${{ matrix.variant }}"
+          minecraft_version="${{ matrix.minecraft_version }}"
 
           case "${variant}" in
             paper)
+              paper_build="${{ matrix.paper_build }}"
               echo "dockerfile=game/minecraft/paper/Dockerfile" >> "$GITHUB_OUTPUT"
               echo "build_args<<EOF" >> "$GITHUB_OUTPUT"
-              echo "MINECRAFT_VERSION=${MINECRAFT_VERSION}" >> "$GITHUB_OUTPUT"
-              echo "PAPER_BUILD=${PAPER_BUILD}" >> "$GITHUB_OUTPUT"
+              echo "MINECRAFT_VERSION=${minecraft_version}" >> "$GITHUB_OUTPUT"
+              echo "PAPER_BUILD=${paper_build}" >> "$GITHUB_OUTPUT"
               echo "EOF" >> "$GITHUB_OUTPUT"
-              echo "versioned_tag=${MINECRAFT_VERSION}-paper-${PAPER_BUILD}" >> "$GITHUB_OUTPUT"
+              echo "versioned_tag=${minecraft_version}-paper-${paper_build}" >> "$GITHUB_OUTPUT"
               ;;
             fabric)
+              fabric_loader_version="${{ matrix.fabric_loader_version }}"
+              fabric_installer_version="${{ matrix.fabric_installer_version }}"
               echo "dockerfile=game/minecraft/fabric/Dockerfile" >> "$GITHUB_OUTPUT"
               echo "build_args<<EOF" >> "$GITHUB_OUTPUT"
-              echo "MINECRAFT_VERSION=${MINECRAFT_VERSION}" >> "$GITHUB_OUTPUT"
-              echo "FABRIC_LOADER_VERSION=${FABRIC_LOADER_VERSION}" >> "$GITHUB_OUTPUT"
-              echo "FABRIC_INSTALLER_VERSION=${FABRIC_INSTALLER_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "MINECRAFT_VERSION=${minecraft_version}" >> "$GITHUB_OUTPUT"
+              echo "FABRIC_LOADER_VERSION=${fabric_loader_version}" >> "$GITHUB_OUTPUT"
+              echo "FABRIC_INSTALLER_VERSION=${fabric_installer_version}" >> "$GITHUB_OUTPUT"
               echo "EOF" >> "$GITHUB_OUTPUT"
-              echo "versioned_tag=${MINECRAFT_VERSION}-fabric-${FABRIC_LOADER_VERSION}" >> "$GITHUB_OUTPUT"
-              echo "pinned_tag=${MINECRAFT_VERSION}-fabric-loader-${FABRIC_LOADER_VERSION}-installer-${FABRIC_INSTALLER_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "versioned_tag=${minecraft_version}-fabric-${fabric_loader_version}" >> "$GITHUB_OUTPUT"
+              echo "pinned_tag=${minecraft_version}-fabric-loader-${fabric_loader_version}-installer-${fabric_installer_version}" >> "$GITHUB_OUTPUT"
               ;;
             forge)
+              forge_version="${{ matrix.forge_version }}"
               echo "dockerfile=game/minecraft/forge/Dockerfile" >> "$GITHUB_OUTPUT"
               echo "build_args<<EOF" >> "$GITHUB_OUTPUT"
-              echo "MINECRAFT_VERSION=${MINECRAFT_VERSION}" >> "$GITHUB_OUTPUT"
-              echo "FORGE_VERSION=${FORGE_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "MINECRAFT_VERSION=${minecraft_version}" >> "$GITHUB_OUTPUT"
+              echo "FORGE_VERSION=${forge_version}" >> "$GITHUB_OUTPUT"
               echo "EOF" >> "$GITHUB_OUTPUT"
-              echo "versioned_tag=${MINECRAFT_VERSION}-forge-${FORGE_VERSION}" >> "$GITHUB_OUTPUT"
+              echo "versioned_tag=${minecraft_version}-forge-${forge_version}" >> "$GITHUB_OUTPUT"
               ;;
           esac
 
