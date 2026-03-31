@@ -4,12 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       builds:
-        description: "One build per line. paper|<mc>|<paper_build>, fabric|<mc>|<loader>|<installer>, forge|<mc>|<forge_version>"
+        description: "Queue builds separated by ';' or new lines. paper|<mc>|<paper_build>, fabric|<mc>|<loader>|<installer>, forge|<mc>|<forge_version>"
         required: true
-        default: |
-          paper|1.21.11|127
-          fabric|1.21.11|0.18.5|1.1.1
-          forge|1.21.11|61.1.0
+        default: "paper|1.21.11|127; fabric|1.21.11|0.18.5|1.1.1; forge|1.21.11|61.1.0"
 
 jobs:
   prepare:
@@ -33,7 +30,9 @@ jobs:
           raw = os.environ.get("INPUT_BUILDS", "").replace("\r\n", "\n")
           entries = []
 
-          for index, original_line in enumerate(raw.splitlines(), start=1):
+          normalized = raw.replace(";", "\n")
+
+          for index, original_line in enumerate(normalized.splitlines(), start=1):
               line = original_line.strip()
               if not line or line.startswith("#"):
                   continue
