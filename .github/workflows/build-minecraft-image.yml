@@ -80,6 +80,5 @@ jobs:
           file: ${{ steps.pins.outputs.dockerfile }}
           build-args: ${{ steps.pins.outputs.build_args }}
           tags: |
-            servertimeio/minecraft:${{ inputs.variant }}-latest
             servertimeio/minecraft:${{ steps.pins.outputs.versioned_tag }}
             ${{ steps.pins.outputs.pinned_tag && format('servertimeio/minecraft:{0}', steps.pins.outputs.pinned_tag) || '' }}
