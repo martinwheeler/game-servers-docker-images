@@ -50,8 +50,7 @@ jobs:
               echo "MINECRAFT_VERSION=${MINECRAFT_VERSION}" >> "$GITHUB_OUTPUT"
               echo "PAPER_BUILD=${PAPER_BUILD}" >> "$GITHUB_OUTPUT"
               echo "EOF" >> "$GITHUB_OUTPUT"
-              echo "pinned_tag=${MINECRAFT_VERSION}-paper-${PAPER_BUILD}" >> "$GITHUB_OUTPUT"
-              echo "mutable_tag=${MINECRAFT_VERSION}-paper" >> "$GITHUB_OUTPUT"
+              echo "versioned_tag=${MINECRAFT_VERSION}-paper-${PAPER_BUILD}" >> "$GITHUB_OUTPUT"
               ;;
             fabric)
               echo "dockerfile=game/minecraft/fabric/Dockerfile" >> "$GITHUB_OUTPUT"
@@ -60,8 +59,8 @@ jobs:
               echo "FABRIC_LOADER_VERSION=${FABRIC_LOADER_VERSION}" >> "$GITHUB_OUTPUT"
               echo "FABRIC_INSTALLER_VERSION=${FABRIC_INSTALLER_VERSION}" >> "$GITHUB_OUTPUT"
               echo "EOF" >> "$GITHUB_OUTPUT"
+              echo "versioned_tag=${MINECRAFT_VERSION}-fabric-${FABRIC_LOADER_VERSION}" >> "$GITHUB_OUTPUT"
               echo "pinned_tag=${MINECRAFT_VERSION}-fabric-loader-${FABRIC_LOADER_VERSION}-installer-${FABRIC_INSTALLER_VERSION}" >> "$GITHUB_OUTPUT"
-              echo "mutable_tag=${MINECRAFT_VERSION}-fabric" >> "$GITHUB_OUTPUT"
               ;;
             forge)
               echo "dockerfile=game/minecraft/forge/Dockerfile" >> "$GITHUB_OUTPUT"
@@ -69,8 +68,7 @@ jobs:
               echo "MINECRAFT_VERSION=${MINECRAFT_VERSION}" >> "$GITHUB_OUTPUT"
               echo "FORGE_VERSION=${FORGE_VERSION}" >> "$GITHUB_OUTPUT"
               echo "EOF" >> "$GITHUB_OUTPUT"
-              echo "pinned_tag=${MINECRAFT_VERSION}-forge-${FORGE_VERSION}" >> "$GITHUB_OUTPUT"
-              echo "mutable_tag=${MINECRAFT_VERSION}-forge" >> "$GITHUB_OUTPUT"
+              echo "versioned_tag=${MINECRAFT_VERSION}-forge-${FORGE_VERSION}" >> "$GITHUB_OUTPUT"
               ;;
           esac
 
@@ -83,5 +81,5 @@ jobs:
           build-args: ${{ steps.pins.outputs.build_args }}
           tags: |
             servertimeio/minecraft:${{ inputs.variant }}-latest
-            servertimeio/minecraft:${{ steps.pins.outputs.mutable_tag }}
-            servertimeio/minecraft:${{ steps.pins.outputs.pinned_tag }}
+            servertimeio/minecraft:${{ steps.pins.outputs.versioned_tag }}
+            ${{ steps.pins.outputs.pinned_tag && format('servertimeio/minecraft:{0}', steps.pins.outputs.pinned_tag) || '' }}
