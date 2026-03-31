@@ -18,6 +18,16 @@ write_jvm_args_file() {
   } > "${JVM_ARGS_FILE}"
 }
 
+prepare_forge_runtime_dir() {
+  local runtime_dir
+  runtime_dir="$(dirname "${SERVER_EXECUTABLE}")"
+
+  # Forge's generated run.sh uses relative paths. Seed the installed server
+  # payload into SERVER_DIR and run Forge from there so all mutable data stays
+  # on the mounted volume.
+  cp -an "${runtime_dir}/." "${SERVER_DIR}/"
+}
+
 if [ "$(id -u)" = "0" ]; then
   mkdir -p "${SERVER_DIR}" "${CONTAINER_HOME}"
   chown -R "${PUID}:${PGID}" "${SERVER_DIR}" "${CONTAINER_HOME}"
@@ -88,8 +98,16 @@ case "${SERVER_LAUNCH_MODE}" in
     fi
     ;;
   script)
-    write_jvm_args_file
-    cmd=("${SERVER_EXECUTABLE}")
+    if [ "${SERVER_SOFTWARE_FAMILY:-}" = "forge" ]; then
+      prepare_forge_runtime_dir
+      JVM_ARGS_FILE="${SERVER_DIR}/$(basename "${JVM_ARGS_FILE:-user_jvm_args.txt}")"
+      write_jvm_args_file
+      cd "${SERVER_DIR}"
+      cmd=("${SERVER_DIR}/$(basename "${SERVER_EXECUTABLE}")")
+    else
+      write_jvm_args_file
+      cmd=("${SERVER_EXECUTABLE}")
+    fi
     ;;
   *)
     echo "Unsupported SERVER_LAUNCH_MODE: ${SERVER_LAUNCH_MODE}" >&2
