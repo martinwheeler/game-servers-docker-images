@@ -35,7 +35,8 @@ $ docker run -d --net=host -e SERVER_PORT=2458 --name=valheim-dedicated2 servert
 ```
 
 **It's also recommended to use "--cpuset-cpus=" to limit the game server to a specific core & thread.**<br/>
-**The container installs the Valheim dedicated-server build pinned in `.valheim.env` on startup.**
+**The container installs the Valheim dedicated server with anonymous `app_update 896660 validate` on startup.**
+This lets a fresh bind-mounted install directory be populated before the server starts.
 
 # Configuration
 ## Environment Variables

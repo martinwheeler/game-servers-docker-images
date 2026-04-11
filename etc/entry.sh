@@ -1,26 +1,22 @@
 #!/bin/bash
 mkdir -p "${STEAMAPPDIR}" || true
 
-# Install the exact dedicated-server manifests baked into the image when present.
-if [ -n "${VALHEIM_LINUX_DEPOT_MANIFEST_ID:-}" ] && [ -n "${VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID:-}" ]; then
-  bash "${STEAMCMDDIR}/steamcmd.sh" \
-    +login anonymous \
-    +download_depot "$STEAMAPPID" 896661 "${VALHEIM_LINUX_DEPOT_MANIFEST_ID}" \
-    +download_depot "$STEAMAPPID" 1006 "${VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID}" \
-    +quit
-
-  mkdir -p "${STEAMAPPDIR}"
-  rsync -a "${STEAMCMDDIR}/steamapps/content/app_${STEAMAPPID}/depot_896661/" "${STEAMAPPDIR}/"
-  rsync -a "${STEAMCMDDIR}/steamapps/content/app_${STEAMAPPID}/depot_1006/" "${STEAMAPPDIR}/"
-else
-  # Override SteamCMD launch arguments if necessary
-  # Used for subscribing to betas or for testing
+install_with_app_update() {
+  # Override SteamCMD launch arguments if necessary.
+  # Used for subscribing to betas or for testing.
   if [ -z "$STEAMCMD_UPDATE_ARGS" ]; then
     bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "$STEAMAPPDIR" +login anonymous +app_update "$STEAMAPPID" validate +quit
   else
     steamcmd_update_args=($STEAMCMD_UPDATE_ARGS)
     bash "${STEAMCMDDIR}/steamcmd.sh" +force_install_dir "$STEAMAPPDIR" +login anonymous +app_update "$STEAMAPPID" "${steamcmd_update_args[@]}" validate +quit
   fi
+}
+
+install_with_app_update
+
+if [ ! -x "${STEAMAPPDIR}/valheim_server.x86_64" ]; then
+  echo "Valheim server binary is missing after Steam install: ${STEAMAPPDIR}/valheim_server.x86_64" >&2
+  exit 1
 fi
 
 # We assume that if the valheim plus config is missing, that this is a fresh container
