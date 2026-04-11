@@ -27,6 +27,15 @@ fi
 mkdir -p "${SERVER_DIR}"
 cd "${SERVER_DIR}"
 
+sanitized_level_name="$(printf '%s' "${LEVEL_NAME}" | sed -E 's/[^A-Za-z0-9_-]+/_/g; s/^_+//; s/_+$//')"
+if [ -z "${sanitized_level_name}" ]; then
+  sanitized_level_name="world"
+fi
+if [ "${sanitized_level_name}" != "${LEVEL_NAME}" ]; then
+  echo "Sanitized LEVEL_NAME from '${LEVEL_NAME}' to '${sanitized_level_name}' for world directory safety." >&2
+  LEVEL_NAME="${sanitized_level_name}"
+fi
+
 if [ "${EULA}" != "TRUE" ] && [ "${EULA}" != "true" ]; then
   echo "You must accept the Minecraft EULA by setting EULA=TRUE" >&2
   echo "See https://aka.ms/MinecraftEULA" >&2
