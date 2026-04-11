@@ -19,6 +19,15 @@ if [ ! -x "${STEAMAPPDIR}/valheim_server.x86_64" ]; then
   exit 1
 fi
 
+sanitized_world_name="$(printf '%s' "${SERVER_WORLD_NAME}" | sed -E 's/[^A-Za-z0-9_-]+/_/g; s/^_+//; s/_+$//')"
+if [ -z "${sanitized_world_name}" ]; then
+  sanitized_world_name="BraveNewWorld"
+fi
+if [ "${sanitized_world_name}" != "${SERVER_WORLD_NAME}" ]; then
+  echo "Sanitized SERVER_WORLD_NAME from '${SERVER_WORLD_NAME}' to '${sanitized_world_name}' for world file safety." >&2
+  SERVER_WORLD_NAME="${sanitized_world_name}"
+fi
+
 # We assume that if the valheim plus config is missing, that this is a fresh container
 # if [ ! -f "${STEAMAPPDIR}/start_server_bepinex.sh" ]; then
 # Are we in a valheim plus container?
