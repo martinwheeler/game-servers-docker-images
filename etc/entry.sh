@@ -26,7 +26,7 @@ if [ ! -z "$VALHEIM_PLUS_VERSION" ]; then
   wget --max-redirect=30 -qO- https://github.com/Grantapher/ValheimPlus/releases/download/"${VALHEIM_PLUS_VERSION}"/UnixServer.tar.gz | tar xvzf - -C "${STEAMAPPDIR}"
   chmod +x "${STEAMAPPDIR}/start_server_bepinex.sh"
   cp "${STEAMAPPDIR}/start_server_bepinex.sh" "${STEAMAPPDIR}/copy_start_server_bepinex.sh"
-  sed "s/\"Dedicated\"/\$SERVER_WORLD_NAME/" "${STEAMAPPDIR}/copy_start_server_bepinex.sh" | sed "s/\"My server\"/\$SERVER_NAME/" | sed "s/\"secret\"/\$SERVER_PW/" >"${STEAMAPPDIR}/start_server_bepinex.sh"
+  sed 's/"Dedicated"/"${SERVER_WORLD_NAME}"/' "${STEAMAPPDIR}/copy_start_server_bepinex.sh" | sed 's/"My server"/"${SERVER_NAME}"/' | sed 's/"secret"/"${SERVER_PW}"/' >"${STEAMAPPDIR}/start_server_bepinex.sh"
 fi
 # fi
 
