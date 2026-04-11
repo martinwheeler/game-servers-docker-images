@@ -31,6 +31,14 @@ fi
 if [ -z "${FACTORIO_CREATE_SAVE}" ]; then
   FACTORIO_CREATE_SAVE="true"
 fi
+sanitized_save_name="$(printf '%s' "${FACTORIO_SAVE_NAME}" | sed -E 's/[^A-Za-z0-9_-]+/_/g; s/^_+//; s/_+$//')"
+if [ -z "${sanitized_save_name}" ]; then
+  sanitized_save_name="factorio-server"
+fi
+if [ "${sanitized_save_name}" != "${FACTORIO_SAVE_NAME}" ]; then
+  echo "Sanitized FACTORIO_SAVE_NAME from '${FACTORIO_SAVE_NAME}' to '${sanitized_save_name}' for save file safety." >&2
+  FACTORIO_SAVE_NAME="${sanitized_save_name}"
+fi
 
 echo "Downloading Factorio headless server from ${FACTORIO_URL}"
 wget -qO factorio.tar.xz "${FACTORIO_URL}"
