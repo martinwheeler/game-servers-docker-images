@@ -99,7 +99,7 @@ All three images expose the same main runtime settings:
 ```sh
 EULA                 # default TRUE
 MEMORY               # heap size, default 1G
-JAVA_OPTS            # extra JVM flags
+JAVA_OPTS            # extra JVM flags (default: Aikar's G1 tuning — override to disable)
 PUID                 # runtime user id, default 1000
 PGID                 # runtime group id, default 1000
 SERVER_PORT          # default 25565
@@ -118,6 +118,9 @@ PVP                  # default true
 SPAWN_PROTECTION     # default 16
 WHITE_LIST           # default false
 ENABLE_COMMAND_BLOCK # default false
+ENABLE_RCON          # default false
+RCON_PORT            # default 25575
+RCON_PASSWORD        # default empty; required when ENABLE_RCON=true
 VIEW_DISTANCE        # default 10
 SIMULATION_DISTANCE  # default 10
 ADDITIONAL_ARGS      # extra arguments appended to the launcher
@@ -136,6 +139,35 @@ docker run -d --name minecraft-paper \
 ```
 
 The same container contract applies to Fabric and Forge. Only the image tag changes.
+
+## RCON
+
+All Minecraft images include a `rcon-cli` helper for running server console commands through RCON.
+RCON is disabled by default. Enable it with a password on first start:
+
+```sh
+docker run -d --name minecraft-paper \
+  -p 25565:25565/tcp -p 25565:25565/udp \
+  -e ENABLE_RCON=true \
+  -e RCON_PASSWORD='change-this-password' \
+  -v ~/minecraft-paper:/data \
+  servertimeio/minecraft:paper-latest
+```
+
+Run a command from the host:
+
+```sh
+docker exec minecraft-paper rcon-cli "op YourMinecraftName"
+```
+
+Or open a simple interactive prompt:
+
+```sh
+docker exec -it minecraft-paper rcon-cli
+```
+
+The entrypoint writes RCON settings only when it creates `server.properties` for a new data directory.
+For an existing server, update `/data/server.properties` manually or recreate that file before restart.
 
 ## Version helpers
 

@@ -21,7 +21,7 @@ write_jvm_args_file() {
 if [ "$(id -u)" = "0" ]; then
   mkdir -p "${SERVER_DIR}" "${CONTAINER_HOME}"
   chown -R "${PUID}:${PGID}" "${SERVER_DIR}" "${CONTAINER_HOME}"
-  exec su-exec "${PUID}:${PGID}" /usr/local/bin/entry.sh
+  exec gosu "${PUID}:${PGID}" /usr/local/bin/entry.sh
 fi
 
 mkdir -p "${SERVER_DIR}"
@@ -39,6 +39,11 @@ fi
 if [ "${EULA}" != "TRUE" ] && [ "${EULA}" != "true" ]; then
   echo "You must accept the Minecraft EULA by setting EULA=TRUE" >&2
   echo "See https://aka.ms/MinecraftEULA" >&2
+  exit 1
+fi
+
+if { [ "${ENABLE_RCON}" = "TRUE" ] || [ "${ENABLE_RCON}" = "true" ]; } && [ -z "${RCON_PASSWORD:-}" ]; then
+  echo "RCON is enabled, but RCON_PASSWORD is empty. Set RCON_PASSWORD to a strong value." >&2
   exit 1
 fi
 
@@ -63,6 +68,9 @@ max-build-height=${MAX_BUILD_HEIGHT}
 motd=${MOTD}
 online-mode=${ONLINE_MODE}
 pvp=${PVP}
+enable-rcon=${ENABLE_RCON}
+rcon.port=${RCON_PORT}
+rcon.password=${RCON_PASSWORD:-}
 server-port=${SERVER_PORT}
 simulation-distance=${SIMULATION_DISTANCE}
 spawn-protection=${SPAWN_PROTECTION}
