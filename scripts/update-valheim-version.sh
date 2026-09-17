@@ -31,6 +31,11 @@ print(tag)
 current_version="$(./scripts/get-valheim-version.sh)"
 current_build_id="$(./scripts/get-valheim-build-id.sh)"
 
+# shellcheck disable=SC1091
+source .valheim.env
+current_linux_manifest_id="${VALHEIM_LINUX_DEPOT_MANIFEST_ID:-}"
+current_shared_linux_manifest_id="${VALHEIM_SHARED_LINUX_DEPOT_MANIFEST_ID:-}"
+
 steam_values="$(
   python3 -c '
 import json
@@ -49,7 +54,12 @@ latest_build_id="$(sed -n '1p' <<< "${steam_values}")"
 latest_linux_manifest_id="$(sed -n '2p' <<< "${steam_values}")"
 latest_shared_linux_manifest_id="$(sed -n '3p' <<< "${steam_values}")"
 
-if [ "${current_version}" = "${latest_version}" ] && [ "${current_build_id}" = "${latest_build_id}" ]; then
+# The shared Steamworks depot (1006) can change without a Valheim build ID bump,
+# so every pin is compared, not just the build ID and V+ version.
+if [ "${current_version}" = "${latest_version}" ] \
+  && [ "${current_build_id}" = "${latest_build_id}" ] \
+  && [ "${current_linux_manifest_id}" = "${latest_linux_manifest_id}" ] \
+  && [ "${current_shared_linux_manifest_id}" = "${latest_shared_linux_manifest_id}" ]; then
   echo "Valheim pins already up to date (build ${current_build_id}, V+ ${current_version})"
   exit 0
 fi
@@ -95,3 +105,5 @@ PY
 
 echo "Updated Valheim build from ${current_build_id} to ${latest_build_id}"
 echo "Updated Valheim Plus version from ${current_version} to ${latest_version}"
+echo "Updated Linux depot manifest from ${current_linux_manifest_id} to ${latest_linux_manifest_id}"
+echo "Updated shared Linux depot manifest from ${current_shared_linux_manifest_id} to ${latest_shared_linux_manifest_id}"

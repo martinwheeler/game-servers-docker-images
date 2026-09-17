@@ -1,5 +1,7 @@
 # Purpose
 
+> See `AGENTS.md` at the repo root for branch layout, the scheduled version-bump chain, and the version pins in `.valheim.env`. Keep the two files in sync.
+
 This repository builds and publishes a Docker image for a Valheim dedicated server (two variants: `:latest` / `:base` and `:plus`). The guidance below captures the minimal, project-specific knowledge an AI coding agent needs to be productive: architecture, build/publish flows, runtime configuration, and notable file locations.
 
 ## Big picture
@@ -22,10 +24,10 @@ This repository builds and publishes a Docker image for a Valheim dedicated serv
 - Build locally (examples in `build`):
   - `./build` (runs two `docker build` commands)
   - Equivalent manual commands:
-    - `docker build --target=bookworm-base -t servertimeio/valheim:latest -t servertimeio/valheim:base --no-cache .`
-    - `docker build --target=bookworm-plus -t servertimeio/valheim:plus --no-cache .`
+    - `docker build --target=bookworm-base -t martingwheeler/valheim:latest -t martingwheeler/valheim:base --no-cache .`
+    - `docker build --target=bookworm-plus -t martingwheeler/valheim:plus --no-cache .`
 - Push:
-  - `DOCKER_REPO=servertimeio/valheim ./push` or run `./push` after exporting `DOCKER_REPO`.
+  - `DOCKER_REPO=martingwheeler/valheim ./push` or run `./push` after exporting `DOCKER_REPO`.
 
 ## Runtime configuration (essential details)
 
