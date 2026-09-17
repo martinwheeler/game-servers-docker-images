@@ -28,10 +28,16 @@ RUN set -x \
   libpulse0 \
   libpulse-dev
 
+ENV VALHEIM_SAVE_ROOT="${HOMEDIR}/.config/unity3d/IronGate/Valheim"
+
+# VALHEIM_SAVE_ROOT is pre-created and owned by ${USER}: the ValheimPlus/BepInEx
+# start script takes no -savedir, so the server writes worlds there. A named volume
+# mounted over a path that does not exist in the image is created root-owned, and the
+# server then dies with UnauthorizedAccessException while writing the world.
 RUN set -x \
-  && mkdir -p "${STEAMAPPDIR}" \
+  && mkdir -p "${STEAMAPPDIR}" "${VALHEIM_SAVE_ROOT}/worlds_local" "${VALHEIM_SAVE_ROOT}/characters_local" \
   && chmod +x "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" \
-  && chown -R "${USER}:${USER}" "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" "${STEAMAPPDIR}" \
+  && chown -R "${USER}:${USER}" "${HOMEDIR}/entry.sh" "${HOMEDIR}/tinientry.sh" "${STEAMAPPDIR}" "${HOMEDIR}/.config" \
   # Clean up
   && rm -rf /var/lib/apt/lists/*
 
