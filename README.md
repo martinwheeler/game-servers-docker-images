@@ -54,6 +54,7 @@ SCREEN_WIDTH=640
 SCREEN_HEIGHT=480
 STEAMCMD_UPDATE_ARGS="" (Gets appended here: +app_update [appid] [STEAMCMD_UPDATE_ARGS]; Example: "validate")
 ADDITIONAL_ARGS="" (Pass additional arguments to the server. Make sure to escape correctly!)
+ALLOW_STALE_INSTALL=0 (If SteamCMD cannot finish the update after one retry, the container exits instead of starting the old build. Set to 1 to start the existing install anyway, e.g. during a Steam outage)
 ```
 
 If you want to learn more about configuring a Valheim server check this [documentation](https://valheim.fandom.com/wiki/Hosting_Servers).

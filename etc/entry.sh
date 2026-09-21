@@ -12,11 +12,43 @@ install_with_app_update() {
   fi
 }
 
+# SteamCMD's exit code does not reflect whether the app update applied: a wedged
+# steamapps/downloading from an interrupted update makes every later run end in
+# "Error! App '896660' state is 0x6 after update job" while the old game files stay
+# in place and still launch. The app manifest is the reliable signal: StateFlags 4
+# means fully installed; 6 (update required) or 1026 (mid-download) means it is not.
+steam_install_complete() {
+  grep -Eq '"StateFlags"[[:space:]]+"4"' "${STEAMAPPDIR}/steamapps/appmanifest_${STEAMAPPID}.acf" 2>/dev/null
+}
+
 install_with_app_update
+
+if ! steam_install_complete; then
+  # Clearing steamapps/ drops the stale manifest and partial download so SteamCMD
+  # re-validates the install from scratch; game files outside it are kept.
+  echo "SteamCMD did not finish installing app ${STEAMAPPID}; clearing steamapps/ and retrying once." >&2
+  if [ -d "${STEAMAPPDIR}/steamapps" ]; then
+    find "${STEAMAPPDIR}/steamapps" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+  fi
+  install_with_app_update
+fi
 
 if [ ! -x "${STEAMAPPDIR}/valheim_server.x86_64" ]; then
   echo "Valheim server binary is missing after Steam install: ${STEAMAPPDIR}/valheim_server.x86_64" >&2
   exit 1
+fi
+
+# Launching an outdated build is worse than not launching: mods pinned to the current
+# game (e.g. ValheimPlus) abort on the version mismatch, and the world is then saved
+# without them, which can truncate modded inventories and chests.
+if ! steam_install_complete; then
+  if [ "${ALLOW_STALE_INSTALL}" = "1" ]; then
+    echo "SteamCMD update failed; ALLOW_STALE_INSTALL=1, so starting the previously installed build." >&2
+  else
+    echo "SteamCMD update failed after retry; refusing to start an outdated server." >&2
+    echo "Set ALLOW_STALE_INSTALL=1 to start the existing install anyway (e.g. during a Steam outage)." >&2
+    exit 1
+  fi
 fi
 
 sanitized_world_name="$(printf '%s' "${SERVER_WORLD_NAME}" | sed -E 's/[^A-Za-z0-9_-]+/_/g; s/^_+//; s/_+$//')"
@@ -62,7 +94,20 @@ fi
 # if [ ! -f "${STEAMAPPDIR}/start_server_bepinex.sh" ]; then
 # Are we in a valheim plus container?
 if [ ! -z "$VALHEIM_PLUS_VERSION" ]; then
-  wget --max-redirect=30 -qO- https://github.com/Grantapher/ValheimPlus/releases/download/"${VALHEIM_PLUS_VERSION}"/UnixServer.tar.gz | tar xvzf - -C "${STEAMAPPDIR}"
+  # Download to a file first: piping wget into tar hides a failed download, leaving
+  # the previous ValheimPlus.dll in place to run against a game it may not support.
+  valheim_plus_archive="$(mktemp)"
+  if ! wget --max-redirect=30 -qO "${valheim_plus_archive}" https://github.com/Grantapher/ValheimPlus/releases/download/"${VALHEIM_PLUS_VERSION}"/UnixServer.tar.gz; then
+    echo "Could not download ValheimPlus ${VALHEIM_PLUS_VERSION} UnixServer.tar.gz." >&2
+    rm -f "${valheim_plus_archive}"
+    exit 1
+  fi
+  if ! tar xvzf "${valheim_plus_archive}" -C "${STEAMAPPDIR}"; then
+    echo "Could not extract ValheimPlus ${VALHEIM_PLUS_VERSION} UnixServer.tar.gz." >&2
+    rm -f "${valheim_plus_archive}"
+    exit 1
+  fi
+  rm -f "${valheim_plus_archive}"
   chmod +x "${STEAMAPPDIR}/start_server_bepinex.sh"
   cp "${STEAMAPPDIR}/start_server_bepinex.sh" "${STEAMAPPDIR}/copy_start_server_bepinex.sh"
   # The upstream script ends in a hardcoded exec line and never forwards "$@", so the
